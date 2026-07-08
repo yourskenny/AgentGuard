@@ -50,6 +50,7 @@ M0 骨架已完成:
 - 2026-07-08: GitHub issues/roadmap 整理已完成。创建 #1 CI workflow、#2 最小端到端 demo、#3 发布说明与录屏脚本、#4 MCP adapter 生命周期硬化四个 GitHub issues, 并新增 `docs/roadmap.md` 固化优先级和验收标准。
 - 2026-07-08: CI 与发布徽章整理已完成。新增 `.github/workflows/ci.yml`, 在 push main 和 pull_request 时安装 `.[dev]` 并运行 pytest/ruff; README 增加 CI badge; roadmap 标记 GitHub #1 完成。
 - 2026-07-08: 最小端到端 demo 脚本已完成。新增 `scripts/demo_e2e.py`, 一次性覆盖 scan、真实 stdio MCP adapter gateway allow、路径越界 deny、trace 读取和 85-case eval, 输出写入 `runs/demo/`; README 和 roadmap 已链接 GitHub #2。
+- 2026-07-08: 发布说明和示例录屏脚本已完成。新增 `docs/release-notes.md` 和 `docs/demo-recording-script.md`, 覆盖当前里程碑、验证证据、安全边界、2-3 分钟录屏流程和禁止夸大的表述; README 和 roadmap 已链接 GitHub #3。
 
 ## 里程碑总览
 
@@ -467,6 +468,22 @@ M0 骨架已完成:
 - demo 输出不包含 secret 原值。
 - pytest、ruff 和 CI 通过。
 
+## 发布说明和示例录屏脚本
+
+- [x] 新增发布说明文档。
+- [x] 新增 2-3 分钟 demo recording script。
+- [x] 发布说明列出已实现能力、验证证据、安全边界和下一步。
+- [x] 录屏脚本给出确切命令、预期观察和收尾口径。
+- [x] 明确禁止 production、OS sandbox、enterprise traffic、hosted dashboard 等未实现表述。
+- [x] README 增加入口。
+- [x] roadmap 标记 GitHub #3 完成。
+
+验收标准:
+
+- 文档能让新读者独立完成一次项目介绍录制。
+- 所有能力表述都能落回仓库当前实现和验证证据。
+- pytest、ruff 和 CI 通过。
+
 ## 依赖关系
 
 ```text
@@ -526,12 +543,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从发布说明和示例录屏脚本开始, 按以下顺序做:
+建议下一轮从 MCP adapter 连接池与进程生命周期硬化开始, 按以下顺序做:
 
-1. 发布说明和示例录屏脚本, 对应 GitHub #3。
-2. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
-3. 根据 CI 和 demo 结果回补 README quick start。
-4. 关闭或更新已完成 GitHub issues。
-5. 从 demo 输出中挑选稳定样例回补报告文档。
+1. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
+2. 根据 CI 和 demo 结果回补 README quick start。
+3. 关闭或更新已完成 GitHub issues。
+4. 从 demo 输出中挑选稳定样例回补报告文档。
+5. 为后续策略规则扩展增加 issue。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

@@ -18,7 +18,7 @@ Completed baseline:
 
 - [x] [#1 Add CI workflow and README status badge](https://github.com/yourskenny/AgentGuard/issues/1)
 - [x] [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
-- [ ] [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
+- [x] [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
 - [ ] [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
 
 ## Priority Order
@@ -54,6 +54,8 @@ Acceptance:
 ### P2: Release Notes And Recording Script
 
 GitHub issue: [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
+
+Status: complete. See release notes and the demo recording script in the docs index.
 
 Why next: public presentation material should be synchronized with real repo behavior before sharing the project.
 
