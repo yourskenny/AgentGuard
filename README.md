@@ -84,6 +84,7 @@ Excerpt:
 - [Interview Guide](docs/interview-guide.md)
 - [Resume Bullets](docs/resume-bullets.md)
 - [Project Retrospective](docs/project-retrospective.md)
+- [MCP Adapter Design](docs/mcp-adapter-design.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Task Breakdown](docs/task-breakdown.md)
 

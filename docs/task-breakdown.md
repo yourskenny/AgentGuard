@@ -45,6 +45,7 @@ M0 骨架已完成:
 - 2026-07-08: M6.3 已完成。新增简历 bullet 文档, 提供稳健版 4 条和 Agent 工程基础设施版 4 条, 并列出当前证据边界与不得夸大的未实现能力。
 - 2026-07-08: M6.4 已完成。新增项目复盘与面试问答文档, 串联里程碑回顾、工程取舍、证据索引、演示命令和高频追问; README 文档索引已链接该材料。
 - 2026-07-08: 发布前 GitHub 同步已完成。确认 `yourskenny/AgentGuard` 为公开仓库, 默认分支为 `main`; 本地验证通过后将当前 HEAD 推送到 `origin/main`, 并用远端 SHA 等于本地 HEAD 作为同步验收。
+- 2026-07-08: 后续 MCP adapter 对接设计已完成。新增 `docs/mcp-adapter-design.md`, 比较三种接口形态并选择保留现有窄 `ToolAdapter.execute()` port、在具体 `MCPToolAdapter` 内部隐藏 registry/session/result/error 复杂度的方案。
 
 ## 里程碑总览
 
@@ -381,6 +382,20 @@ M0 骨架已完成:
 - 本地 `git status -sb` 干净。
 - 本地 HEAD 与远端 `origin/main` 的 SHA 一致。
 
+## 后续 MCP adapter 对接设计
+
+- [x] 明确调用方、关键操作、约束和需要隐藏的内部复杂度。
+- [x] 比较极简 execute port、显式 session manager、ports-and-adapters runtime 三种接口形态。
+- [x] 选择保留现有 `ToolAdapter.execute(request)` 作为 gateway 唯一依赖。
+- [x] 设计具体 `MCPToolAdapter` 的 config、构造、execute、close 和错误码。
+- [x] 在 README 中加入设计文档入口。
+
+验收标准:
+
+- 设计不改变现有 gateway policy/trace/eval 契约。
+- 能指导下一步真实 MCP adapter spike。
+- 错误映射、结果归一化和生命周期边界清晰。
+
 ## 依赖关系
 
 ```text
@@ -440,12 +455,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从后续 MCP adapter 对接设计开始, 按以下顺序做:
+建议下一轮从真实 MCP adapter 对接 spike 开始, 按以下顺序做:
 
-1. 后续 MCP adapter 对接设计。
-2. 真实 MCP adapter 对接 spike。
-3. GitHub issues/roadmap 整理。
-4. CI 与发布徽章整理。
-5. 最小端到端 demo 脚本。
+1. 真实 MCP adapter 对接 spike。
+2. GitHub issues/roadmap 整理。
+3. CI 与发布徽章整理。
+4. 最小端到端 demo 脚本。
+5. 发布说明和示例录屏脚本。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。
