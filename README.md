@@ -81,6 +81,7 @@ Excerpt:
 - [API Contract](docs/api-contract.md)
 - [Threat Model](docs/threat-model.md)
 - [Evaluation](docs/evaluation.md)
+- [Interview Guide](docs/interview-guide.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Task Breakdown](docs/task-breakdown.md)
 
