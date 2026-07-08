@@ -108,6 +108,7 @@ The demo writes scan, gateway, trace, and evaluation artifacts under `runs/demo/
 - [Resume Bullets](docs/resume-bullets.md)
 - [Project Retrospective](docs/project-retrospective.md)
 - [MCP Adapter Design](docs/mcp-adapter-design.md)
+- [Workbench Design](docs/workbench-design.md)
 - [Roadmap](docs/roadmap.md)
 - [Release Notes](docs/release-notes.md)
 - [Demo Recording Script](docs/demo-recording-script.md)
