@@ -35,6 +35,7 @@ M0 骨架已完成:
 - 2026-07-08: M3.3 已完成。网络外发策略新增 allowlist、内网/localhost/metadata deny 和跨工具外发标记测试; 外部 URL 默认 confirm, `network.allowed_domains` 命中时 allow, private/loopback/link-local/metadata host 输出 `internal_network_egress` 并 deny。
 - 2026-07-08: M3.4 已完成。脱敏策略新增递归参数脱敏、tool result 摘要脱敏、authorize trace 不落原始 secret、evaluator redaction coverage 测试; `PolicyDecision` 现在输出 `redactionCount`, 嵌套 token/secret/password/api_key 均会计数并替换为 `***REDACTED***`。
 - 2026-07-08: M4.1 已完成。FastAPI TestClient 契约测试覆盖 `/healthz`、`/v1/tool-calls:authorize`、`/v1/tool-calls`、`/v1/traces`、`/v1/runs/{run_id}/trace`; deny 返回 403, confirm 返回 409, authorize 只写 policy_decision 不写 tool_result。
+- 2026-07-08: M4.2 已完成。新增 `ToolAdapter` 协议、`MockToolAdapter` 和 `ToolAdapterError`; gateway 支持 adapter 注入, deny/confirm 不执行 adapter, allow 返回结构化 mock result, adapter 错误返回 502 并记录 `tool_error` trace event。
 
 ## 里程碑总览
 
@@ -225,10 +226,10 @@ M0 骨架已完成:
 
 ### M4.2 Tool Adapter 抽象
 
-- [ ] 定义 adapter interface。
-- [ ] 实现 mock adapter。
-- [ ] 为后续 MCP adapter 保留接口。
-- [ ] 确保 deny 请求不会调用 adapter。
+- [x] 定义 adapter interface。
+- [x] 实现 mock adapter。
+- [x] 为后续 MCP adapter 保留接口。
+- [x] 确保 deny 请求不会调用 adapter。
 
 验收标准:
 
@@ -400,12 +401,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 M3 开始, 按以下顺序做:
+建议下一轮从 M4.3 开始, 按以下顺序做:
 
-1. M4.2: Tool Adapter 抽象。
-2. M4.3: Trace Recorder 完善。
-3. M5.1: 扩展 JSONL case。
-4. M5.2: 指标计算完善。
-5. M5.3: 回归报告样例。
+1. M4.3: Trace Recorder 完善。
+2. M5.1: 扩展 JSONL case。
+3. M5.2: 指标计算完善。
+4. M5.3: 回归报告样例。
+5. M6.1: README 使用说明。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

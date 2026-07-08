@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from agentguard.adapters import MockToolAdapter, ToolAdapter, ToolAdapterError
 from agentguard.config import load_policy
 from agentguard.models import PolicyDecision, ToolCallRequest, TraceEvent
 from agentguard.policy import PolicyEngine
@@ -15,10 +16,12 @@ from agentguard.trace import TraceRecorder
 def create_app(
     policy_path: str | Path | None = None,
     trace_db: str | Path = "runs/agentguard.sqlite3",
+    tool_adapter: ToolAdapter | None = None,
 ) -> FastAPI:
     config = load_policy(policy_path)
     engine = PolicyEngine(config=config)
     recorder = TraceRecorder(trace_db)
+    adapter = tool_adapter or MockToolAdapter()
     app = FastAPI(title="AgentGuard Gateway", version="0.1.0")
 
     @app.get("/healthz")
@@ -64,10 +67,29 @@ def create_app(
                 decision,
             )
 
-        result = {
-            "content": "adapter execution is not configured in the M0 skeleton",
-            "echo": decision.redacted_arguments,
-        }
+        adapter_request = request.model_copy(update={"arguments": decision.redacted_arguments})
+        try:
+            result = adapter.execute(adapter_request)
+        except ToolAdapterError as exc:
+            error_payload, error_redaction_count = engine.redact_tool_result(
+                {
+                    "toolName": request.tool_name,
+                    "serverName": request.server_name,
+                    "error": {"code": exc.code, "message": exc.message},
+                }
+            )
+            error_payload["redactionCount"] = error_redaction_count
+            if request.run_id:
+                recorder.record_event(
+                    TraceEvent(
+                        run_id=request.run_id,
+                        step_id=request.step_id,
+                        event_type="tool_error",
+                        payload=error_payload,
+                    )
+                )
+            return _error_response(502, exc.code, exc.message, decision)
+
         result, result_redaction_count = engine.redact_tool_result(result)
         if request.run_id:
             recorder.record_event(

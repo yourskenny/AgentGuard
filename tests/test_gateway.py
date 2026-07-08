@@ -2,6 +2,7 @@ import json
 
 from fastapi.testclient import TestClient
 
+from agentguard.adapters import ToolAdapterError
 from agentguard.gateway import create_app
 
 
@@ -128,3 +129,77 @@ def test_trace_write_and_read_roundtrip(tmp_path):
     assert write_response.json() == {"stored": True}
     assert trace_response.status_code == 200
     assert trace_response.json()["steps"][0]["payload"] == {"ok": True}
+
+
+def test_denied_tool_call_does_not_execute_adapter(tmp_path):
+    class CountingAdapter:
+        def __init__(self):
+            self.calls = 0
+
+        def execute(self, request):
+            self.calls += 1
+            return {"ok": True}
+
+    adapter = CountingAdapter()
+    client = TestClient(create_app(trace_db=tmp_path / "trace.sqlite3", tool_adapter=adapter))
+
+    response = client.post(
+        "/v1/tool-calls",
+        json={"toolName": "read_file", "arguments": {"path": "../secret.txt"}},
+    )
+
+    assert response.status_code == 403
+    assert adapter.calls == 0
+
+
+def test_allowed_tool_call_returns_mock_adapter_result(tmp_path):
+    client = TestClient(create_app(trace_db=tmp_path / "trace.sqlite3"))
+
+    response = client.post(
+        "/v1/tool-calls",
+        json={
+            "serverName": "filesystem",
+            "toolName": "read_file",
+            "arguments": {"path": "README.md"},
+        },
+    )
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["result"] == {
+        "adapter": "mock",
+        "serverName": "filesystem",
+        "toolName": "read_file",
+        "arguments": {"path": "README.md"},
+        "content": "mock adapter executed read_file",
+    }
+
+
+def test_adapter_error_is_recorded_as_trace_error_event(tmp_path):
+    class FailingAdapter:
+        def execute(self, request):
+            raise ToolAdapterError("adapter exploded", code="adapter_failed")
+
+    client = TestClient(
+        create_app(trace_db=tmp_path / "trace.sqlite3", tool_adapter=FailingAdapter())
+    )
+
+    response = client.post(
+        "/v1/tool-calls",
+        json={
+            "runId": "adapter-error-run",
+            "stepId": "step-1",
+            "toolName": "read_file",
+            "arguments": {"path": "README.md"},
+        },
+    )
+    trace = client.get("/v1/runs/adapter-error-run/trace").json()
+    event_types = [event["eventType"] for event in trace["steps"]]
+    error_payload = trace["steps"][1]["payload"]
+
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "adapter_failed"
+    assert event_types == ["policy_decision", "tool_error"]
+    assert error_payload["toolName"] == "read_file"
+    assert error_payload["error"]["code"] == "adapter_failed"
+    assert error_payload["error"]["message"] == "adapter exploded"
