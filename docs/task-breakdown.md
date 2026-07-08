@@ -40,6 +40,7 @@ M0 骨架已完成:
 - 2026-07-08: M5.1 已完成。`security_cases.jsonl` 扩展到 85 条, 覆盖 20 normal、20 tool poisoning、10 path escape、10 sensitive file、10 dangerous shell、10 network egress、5 cross-tool exfiltration; evaluator 支持可选 `tool` 元数据 case, poisoning case 会通过 metadata analyzer 纳入 `tool_description_injection` 风险召回。
 - 2026-07-08: M5.2 已完成。`EvaluationResult` 新增 `categoryMetrics`, JSON/Markdown eval report 输出分类通过率; 指标单测覆盖空数据、全安全、全风险、混合失败, 失败 case 保留 expected/actual decision 和 pass 状态。
 - 2026-07-08: M5.3 已完成。新增 failure demo eval case 和 `docs/report-samples/` 下 Markdown/JSON/SARIF 三份评测报告样例; Markdown eval report 增加风险分布和失败样例区块, README 已引用样例报告。
+- 2026-07-08: M6.1 已完成。README 明确项目定位为工具安全闸门、轨迹黑盒和回放评测器; quick start、scan 输出样例、eval 指标样例、报告样例链接和安全边界已补齐。
 
 ## 里程碑总览
 
@@ -51,7 +52,7 @@ M0 骨架已完成:
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 已完成 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 已完成 |
 | M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 已完成 |
-| M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
+| M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 进行中 |
 
 ## M1: MCP 配置扫描增强
 
@@ -311,11 +312,11 @@ M0 骨架已完成:
 
 ### M6.1 README 完善
 
-- [ ] 写清楚项目定位: 工具安全闸门、轨迹黑盒、回放评测器。
-- [ ] 给出 quick start。
-- [ ] 展示 scan 输出样例。
-- [ ] 展示 eval 指标样例。
-- [ ] 说明非目标和安全边界。
+- [x] 写清楚项目定位: 工具安全闸门、轨迹黑盒、回放评测器。
+- [x] 给出 quick start。
+- [x] 展示 scan 输出样例。
+- [x] 展示 eval 指标样例。
+- [x] 说明非目标和安全边界。
 
 验收标准:
 
@@ -405,12 +406,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 M6.1 开始, 按以下顺序做:
+建议下一轮从 M6.2 开始, 按以下顺序做:
 
-1. M6.1: README 使用说明。
-2. M6.2: 报告样例和演示脚本。
-3. M6.3: 简历/面试材料。
-4. M6.4: 项目复盘与面试问答。
-5. 发布前 GitHub 同步和远端验证。
+1. M6.2: 报告样例和演示脚本。
+2. M6.3: 简历/面试材料。
+3. M6.4: 项目复盘与面试问答。
+4. 发布前 GitHub 同步和远端验证。
+5. 后续 MCP adapter 对接设计。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。
