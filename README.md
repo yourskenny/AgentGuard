@@ -83,6 +83,7 @@ Excerpt:
 - [Evaluation](docs/evaluation.md)
 - [Interview Guide](docs/interview-guide.md)
 - [Resume Bullets](docs/resume-bullets.md)
+- [Project Retrospective](docs/project-retrospective.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Task Breakdown](docs/task-breakdown.md)
 
