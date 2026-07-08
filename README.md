@@ -96,6 +96,7 @@ The adapter currently targets stdio MCP servers through the MCP Python SDK v1.x 
 - [Resume Bullets](docs/resume-bullets.md)
 - [Project Retrospective](docs/project-retrospective.md)
 - [MCP Adapter Design](docs/mcp-adapter-design.md)
+- [Roadmap](docs/roadmap.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Task Breakdown](docs/task-breakdown.md)
 

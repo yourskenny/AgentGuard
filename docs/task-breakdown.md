@@ -47,6 +47,7 @@ M0 骨架已完成:
 - 2026-07-08: 发布前 GitHub 同步已完成。确认 `yourskenny/AgentGuard` 为公开仓库, 默认分支为 `main`; 本地验证通过后将当前 HEAD 推送到 `origin/main`, 并用远端 SHA 等于本地 HEAD 作为同步验收。
 - 2026-07-08: 后续 MCP adapter 对接设计已完成。新增 `docs/mcp-adapter-design.md`, 比较三种接口形态并选择保留现有窄 `ToolAdapter.execute()` port、在具体 `MCPToolAdapter` 内部隐藏 registry/session/result/error 复杂度的方案。
 - 2026-07-08: 真实 MCP adapter 对接 spike 已完成。新增可选 `agentguard[mcp]` 依赖、`MCPToolAdapter`、CLI `proxy --mcp-config`、safe stdio MCP server fixture 和 gateway 集成测试; 当前全量验证为 102 passed、1 个上游 TestClient deprecation warning。
+- 2026-07-08: GitHub issues/roadmap 整理已完成。创建 #1 CI workflow、#2 最小端到端 demo、#3 发布说明与录屏脚本、#4 MCP adapter 生命周期硬化四个 GitHub issues, 并新增 `docs/roadmap.md` 固化优先级和验收标准。
 
 ## 里程碑总览
 
@@ -415,6 +416,22 @@ M0 骨架已完成:
 - 真实 adapter 的成功和失败路径都有测试覆盖。
 - pytest 和 ruff 通过。
 
+## GitHub issues/roadmap 整理
+
+- [x] 查询公开仓库现有 open issues, 避免重复创建。
+- [x] 创建 #1: CI workflow and README status badge。
+- [x] 创建 #2: minimal end-to-end demo script。
+- [x] 创建 #3: release notes and demo recording script。
+- [x] 创建 #4: MCP adapter session and process lifecycle hardening。
+- [x] 新增 `docs/roadmap.md`, 记录优先级、issue 链接、原因和验收标准。
+- [x] README 增加 Roadmap 入口。
+
+验收标准:
+
+- GitHub issue 与仓库文档互相引用。
+- 下一步任务顺序明确。
+- 每个 issue 有目标、范围和验收标准。
+
 ## 依赖关系
 
 ```text
@@ -474,12 +491,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 GitHub issues/roadmap 整理开始, 按以下顺序做:
+建议下一轮从 CI 与发布徽章整理开始, 按以下顺序做:
 
-1. GitHub issues/roadmap 整理。
-2. CI 与发布徽章整理。
-3. 最小端到端 demo 脚本。
-4. 发布说明和示例录屏脚本。
-5. MCP adapter 连接池与进程生命周期硬化。
+1. CI 与发布徽章整理, 对应 GitHub #1。
+2. 最小端到端 demo 脚本, 对应 GitHub #2。
+3. 发布说明和示例录屏脚本, 对应 GitHub #3。
+4. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
+5. 根据 CI 和 demo 结果回补 README quick start。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。
