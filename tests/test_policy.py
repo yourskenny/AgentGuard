@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from agentguard.config import ToolPolicy, default_config
@@ -237,3 +238,59 @@ def test_policy_tags_cross_tool_data_exfiltration():
 
     assert decision.action == Decision.CONFIRM
     assert "cross_tool_exfiltration" in decision.risk_tags
+
+
+def test_policy_redacts_sensitive_arguments_recursively_and_counts():
+    engine = PolicyEngine(default_config(), base_dir=Path.cwd())
+    raw_arguments = {
+        "path": "README.md",
+        "api_key": "sk-top",
+        "access_token": "access-token",
+        "refresh_token": "refresh-token",
+        "password": "pw",
+        "db_password": "db-pw",
+        "secret": "plain-secret",
+        "client_secret": "client-secret",
+        "headers": {"api_key": "sk-nested"},
+        "items": [{"token": "list-token"}, {"profile": {"password": "nested-pw"}}],
+    }
+
+    decision = engine.evaluate(ToolCallRequest(tool_name="read_file", arguments=raw_arguments))
+    rendered = json.dumps(decision.redacted_arguments)
+
+    assert decision.action == Decision.REDACT
+    assert decision.redaction_count == 10
+    assert decision.redacted_arguments["path"] == "README.md"
+    for raw_secret in (
+        "sk-top",
+        "access-token",
+        "refresh-token",
+        "pw",
+        "db-pw",
+        "plain-secret",
+        "client-secret",
+        "sk-nested",
+        "list-token",
+        "nested-pw",
+    ):
+        assert raw_secret not in rendered
+
+
+def test_policy_redacts_tool_result_summary_recursively():
+    engine = PolicyEngine(default_config(), base_dir=Path.cwd())
+
+    redacted, count = engine.redact_tool_result(
+        {
+            "content": "done",
+            "api_key": "sk-result",
+            "metadata": {"password": "result-pw"},
+            "rows": [{"secret": "row-secret"}],
+        }
+    )
+
+    rendered = json.dumps(redacted)
+    assert count == 3
+    assert "done" in rendered
+    assert "sk-result" not in rendered
+    assert "result-pw" not in rendered
+    assert "row-secret" not in rendered

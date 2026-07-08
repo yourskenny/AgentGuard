@@ -38,7 +38,7 @@ class PolicyEngine:
         start = time.perf_counter()
         risks: list[RiskRecord] = []
         action = self._configured_action(request.tool_name)
-        redacted_arguments = self._redact_arguments(request.arguments)
+        redacted_arguments, redaction_count = self._redact_arguments(request.arguments)
 
         risks.extend(self._filesystem_risks(request))
         risks.extend(self._shell_risks(request))
@@ -51,7 +51,7 @@ class PolicyEngine:
             action = Decision.CONFIRM
         elif action == Decision.CONFIRM and self._is_allowlisted_network_request(request):
             action = Decision.ALLOW
-        elif action == Decision.ALLOW and redacted_arguments != request.arguments:
+        elif action == Decision.ALLOW and redaction_count:
             action = Decision.REDACT
 
         elapsed_ms = (time.perf_counter() - start) * 1000
@@ -62,6 +62,7 @@ class PolicyEngine:
             risk_tags=risk_tags,
             risks=risks,
             redacted_arguments=redacted_arguments,
+            redaction_count=redaction_count,
         )
 
     def _configured_action(self, tool_name: str) -> Decision:
@@ -165,17 +166,46 @@ class PolicyEngine:
             )
         return risks
 
-    def _redact_arguments(self, arguments: dict[str, Any]) -> dict[str, Any]:
+    def redact_tool_result(self, result: dict[str, Any]) -> tuple[dict[str, Any], int]:
+        redacted, count = self._redact_value(result)
+        return redacted if isinstance(redacted, dict) else {"value": redacted}, count
+
+    def _redact_arguments(self, arguments: dict[str, Any]) -> tuple[dict[str, Any], int]:
+        redacted, count = self._redact_value(arguments)
+        return redacted if isinstance(redacted, dict) else {}, count
+
+    def _redact_value(self, value: Any, key: str = "") -> tuple[Any, int]:
         if not self.config.redaction.enabled:
-            return dict(arguments)
-        redacted: dict[str, Any] = {}
-        patterns = [pattern.lower() for pattern in self.config.redaction.patterns]
-        for key, value in arguments.items():
-            if any(pattern in key.lower() for pattern in patterns):
-                redacted[key] = "***REDACTED***"
-            else:
-                redacted[key] = value
-        return redacted
+            return value, 0
+        if self._is_sensitive_key(key):
+            return "***REDACTED***", 1
+        if isinstance(value, dict):
+            redacted: dict[str, Any] = {}
+            count = 0
+            for child_key, child_value in value.items():
+                redacted_child, child_count = self._redact_value(child_value, str(child_key))
+                redacted[child_key] = redacted_child
+                count += child_count
+            return redacted, count
+        if isinstance(value, list):
+            redacted_items: list[Any] = []
+            count = 0
+            for item in value:
+                redacted_item, item_count = self._redact_value(item)
+                redacted_items.append(redacted_item)
+                count += item_count
+            return redacted_items, count
+        return value, 0
+
+    def _is_sensitive_key(self, key: str) -> bool:
+        if not key:
+            return False
+        normalized_key = re.sub(r"[^a-z0-9]", "", key.lower())
+        for pattern in self.config.redaction.patterns:
+            normalized_pattern = re.sub(r"[^a-z0-9]", "", pattern.lower())
+            if normalized_pattern and normalized_pattern in normalized_key:
+                return True
+        return False
 
     def _iter_path_arguments(
         self, value: dict[str, Any] | list[Any], prefix: str = ""

@@ -39,7 +39,7 @@ def create_app(
             )
         return decision
 
-    @app.post("/v1/tool-calls")
+    @app.post("/v1/tool-calls", response_model=None)
     def call_tool(request: ToolCallRequest) -> dict[str, Any] | JSONResponse:
         decision = engine.evaluate(request)
         if request.run_id:
@@ -68,13 +68,18 @@ def create_app(
             "content": "adapter execution is not configured in the M0 skeleton",
             "echo": decision.redacted_arguments,
         }
+        result, result_redaction_count = engine.redact_tool_result(result)
         if request.run_id:
             recorder.record_event(
                 TraceEvent(
                     run_id=request.run_id,
                     step_id=request.step_id,
                     event_type="tool_result",
-                    payload={"toolName": request.tool_name, "resultSummary": result},
+                    payload={
+                        "toolName": request.tool_name,
+                        "resultSummary": result,
+                        "redactionCount": result_redaction_count,
+                    },
                 )
             )
         return {

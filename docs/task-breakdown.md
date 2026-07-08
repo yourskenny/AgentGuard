@@ -33,6 +33,7 @@ M0 骨架已完成:
 - 2026-07-08: M3.1 已完成。文件系统策略新增规范化路径测试和 20 个 deny case, 覆盖 `.env`、SSH key、pem、cookies、`../`、Windows/POSIX 绝对路径、反斜杠逃逸、嵌套 path 参数; policy evidence/recommendation 明确 parent traversal 与 symlink-resolved escape 风险。
 - 2026-07-08: M3.2 已完成。Shell 策略新增 13 条危险命令回归 case, 覆盖删除、格式化、权限破坏、`curl/wget | sh/bash`、PowerShell `iwr/Invoke-WebRequest | iex/Invoke-Expression` 和 encoded command; `shell/run_command/exec/execute/bash/powershell/pwsh` 默认 deny, 显式 allow 下 `pwd/ls/Get-Location` 可通过。
 - 2026-07-08: M3.3 已完成。网络外发策略新增 allowlist、内网/localhost/metadata deny 和跨工具外发标记测试; 外部 URL 默认 confirm, `network.allowed_domains` 命中时 allow, private/loopback/link-local/metadata host 输出 `internal_network_egress` 并 deny。
+- 2026-07-08: M3.4 已完成。脱敏策略新增递归参数脱敏、tool result 摘要脱敏、authorize trace 不落原始 secret、evaluator redaction coverage 测试; `PolicyDecision` 现在输出 `redactionCount`, 嵌套 token/secret/password/api_key 均会计数并替换为 `***REDACTED***`。
 
 ## 里程碑总览
 
@@ -41,7 +42,7 @@ M0 骨架已完成:
 | M0 | 可运行骨架 | CLI/API/模型/测试/基础 docs | 已完成 |
 | M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 已完成 |
 | M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 已完成 |
-| M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 进行中 |
+| M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 已完成 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 待做 |
 | M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
 | M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
@@ -190,10 +191,10 @@ M0 骨架已完成:
 
 ### M3.4 脱敏策略
 
-- [ ] 对 key 名包含 token、secret、password、api_key 的参数脱敏。
-- [ ] 对 tool result 摘要执行同样脱敏。
-- [ ] 保留 redaction count 指标。
-- [ ] 避免把完整 secret 写入 trace。
+- [x] 对 key 名包含 token、secret、password、api_key 的参数脱敏。
+- [x] 对 tool result 摘要执行同样脱敏。
+- [x] 保留 redaction count 指标。
+- [x] 避免把完整 secret 写入 trace。
 
 验收标准:
 
@@ -400,10 +401,10 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 建议下一轮从 M3 开始, 按以下顺序做:
 
-1. M3.4: 增加脱敏策略。
-2. M4.1: 落地 Runtime Gateway API 契约。
-3. M4.2: Tool Adapter 抽象。
-4. M4.3: Trace Recorder 完善。
-5. M5.1: 扩展 JSONL case。
+1. M4.1: 落地 Runtime Gateway API 契约。
+2. M4.2: Tool Adapter 抽象。
+3. M4.3: Trace Recorder 完善。
+4. M5.1: 扩展 JSONL case。
+5. M5.2: 指标计算完善。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

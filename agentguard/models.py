@@ -97,6 +97,7 @@ class PolicyDecision(CamelModel):
     risk_tags: list[str] = Field(default_factory=list)
     risks: list[RiskRecord] = Field(default_factory=list)
     redacted_arguments: dict[str, Any] = Field(default_factory=dict)
+    redaction_count: int = 0
 
 
 class TraceEvent(CamelModel):
