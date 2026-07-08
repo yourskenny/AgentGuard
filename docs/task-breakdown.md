@@ -49,6 +49,7 @@ M0 骨架已完成:
 - 2026-07-08: 真实 MCP adapter 对接 spike 已完成。新增可选 `agentguard[mcp]` 依赖、`MCPToolAdapter`、CLI `proxy --mcp-config`、safe stdio MCP server fixture 和 gateway 集成测试; 当前全量验证为 102 passed、1 个上游 TestClient deprecation warning。
 - 2026-07-08: GitHub issues/roadmap 整理已完成。创建 #1 CI workflow、#2 最小端到端 demo、#3 发布说明与录屏脚本、#4 MCP adapter 生命周期硬化四个 GitHub issues, 并新增 `docs/roadmap.md` 固化优先级和验收标准。
 - 2026-07-08: CI 与发布徽章整理已完成。新增 `.github/workflows/ci.yml`, 在 push main 和 pull_request 时安装 `.[dev]` 并运行 pytest/ruff; README 增加 CI badge; roadmap 标记 GitHub #1 完成。
+- 2026-07-08: 最小端到端 demo 脚本已完成。新增 `scripts/demo_e2e.py`, 一次性覆盖 scan、真实 stdio MCP adapter gateway allow、路径越界 deny、trace 读取和 85-case eval, 输出写入 `runs/demo/`; README 和 roadmap 已链接 GitHub #2。
 
 ## 里程碑总览
 
@@ -449,6 +450,23 @@ M0 骨架已完成:
 - 推送后 GitHub Actions 远端 run 成功。
 - GitHub #1 可关闭。
 
+## 最小端到端 demo 脚本
+
+- [x] 新增 `scripts/demo_e2e.py`。
+- [x] demo 扫描 `examples/mcp.sample.json` 并保存 scan Markdown/JSON。
+- [x] demo 通过真实 stdio MCP adapter 调用 safe server 读取 `README.md`。
+- [x] demo 通过 gateway 展示路径越界 deny。
+- [x] demo 读取 `demo-run` trace 并保存 JSON。
+- [x] demo 跑完整 `security_cases.jsonl` eval 并保存 Markdown/JSON。
+- [x] README 增加 demo 运行命令。
+- [x] roadmap 标记 GitHub #2 完成。
+
+验收标准:
+
+- 一条命令可在已安装 `.[dev]` 的本地环境运行。
+- demo 输出不包含 secret 原值。
+- pytest、ruff 和 CI 通过。
+
 ## 依赖关系
 
 ```text
@@ -508,12 +526,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从最小端到端 demo 脚本开始, 按以下顺序做:
+建议下一轮从发布说明和示例录屏脚本开始, 按以下顺序做:
 
-1. 最小端到端 demo 脚本, 对应 GitHub #2。
-2. 发布说明和示例录屏脚本, 对应 GitHub #3。
-3. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
-4. 根据 CI 和 demo 结果回补 README quick start。
-5. 关闭或更新已完成 GitHub issues。
+1. 发布说明和示例录屏脚本, 对应 GitHub #3。
+2. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
+3. 根据 CI 和 demo 结果回补 README quick start。
+4. 关闭或更新已完成 GitHub issues。
+5. 从 demo 输出中挑选稳定样例回补报告文档。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

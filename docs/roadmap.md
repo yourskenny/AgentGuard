@@ -17,7 +17,7 @@ Completed baseline:
 ## Progress
 
 - [x] [#1 Add CI workflow and README status badge](https://github.com/yourskenny/AgentGuard/issues/1)
-- [ ] [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
+- [x] [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
 - [ ] [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
 - [ ] [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
 
@@ -40,6 +40,8 @@ Acceptance:
 ### P1: Minimal End-To-End Demo Script
 
 GitHub issue: [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
+
+Status: complete. The script is `scripts/demo_e2e.py`; README documents the command.
 
 Why next: the project needs one reproducible route that demonstrates scan, policy, gateway, MCP adapter, trace, and eval behavior.
 

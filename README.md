@@ -88,6 +88,15 @@ The real MCP adapter is optional:
 
 The adapter currently targets stdio MCP servers through the MCP Python SDK v1.x and keeps the gateway-facing `ToolAdapter.execute()` boundary stable.
 
+## End-To-End Demo
+
+```powershell
+.\.venv\Scripts\python -m pip install -e .[dev]
+.\.venv\Scripts\python scripts\demo_e2e.py
+```
+
+The demo writes scan, gateway, trace, and evaluation artifacts under `runs/demo/`.
+
 ## Docs
 
 - [Architecture](docs/architecture.md)
