@@ -5,7 +5,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from agentguard.adapters import MCPToolAdapter, ToolAdapterError
+from agentguard.adapters import (
+    MCPAdapterConfig,
+    MCPServerLaunchConfig,
+    MCPToolAdapter,
+    ToolAdapterError,
+    _normalize_mcp_result,
+)
 from agentguard.gateway import create_app
 from agentguard.models import ToolCallRequest
 
@@ -55,6 +61,97 @@ def test_mcp_adapter_reports_missing_server(tmp_path):
         )
 
     assert exc_info.value.code == "mcp_server_not_found"
+
+
+def test_mcp_adapter_close_prevents_execution(tmp_path):
+    adapter = MCPToolAdapter.from_config(_write_config(tmp_path))
+    adapter.close()
+
+    with pytest.raises(ToolAdapterError) as exc_info:
+        adapter.execute(
+            ToolCallRequest(
+                server_name="safe-filesystem",
+                tool_name="read_file",
+                arguments={"path": "README.md"},
+            )
+        )
+
+    assert exc_info.value.code == "mcp_adapter_closed"
+
+
+def test_mcp_adapter_health_check_initializes_safe_server(tmp_path):
+    adapter = MCPToolAdapter.from_config(_write_config(tmp_path))
+
+    health = adapter.health_check()
+
+    assert health["adapter"] == "mcp"
+    assert health["servers"][0]["name"] == "safe-filesystem"
+    assert health["servers"][0]["ok"] is True
+    assert "read_file" in health["servers"][0]["tools"]
+
+
+def test_mcp_adapter_startup_timeout_has_stable_error_code():
+    adapter = MCPToolAdapter(
+        MCPAdapterConfig(
+            servers={
+                "sleepy": MCPServerLaunchConfig(
+                    name="sleepy",
+                    command=sys.executable,
+                    args=("-c", "import time; time.sleep(5)"),
+                )
+            },
+            startup_timeout_s=0.1,
+            call_timeout_s=0.1,
+        )
+    )
+
+    with pytest.raises(ToolAdapterError) as exc_info:
+        adapter.execute(
+            ToolCallRequest(
+                server_name="sleepy",
+                tool_name="read_file",
+                arguments={"path": "README.md"},
+            )
+        )
+
+    assert exc_info.value.code == "mcp_startup_timeout"
+
+
+def test_mcp_result_size_limit_has_stable_error_code():
+    request = ToolCallRequest(
+        server_name="safe-filesystem",
+        tool_name="read_file",
+        arguments={"path": "README.md"},
+    )
+
+    with pytest.raises(ToolAdapterError) as exc_info:
+        _normalize_mcp_result(
+            request,
+            {"content": [{"type": "text", "text": "x" * 200}], "isError": False},
+            max_result_bytes=100,
+        )
+
+    assert exc_info.value.code == "mcp_result_too_large"
+
+
+def test_gateway_shutdown_closes_adapter(tmp_path):
+    class ClosableAdapter:
+        def __init__(self):
+            self.closed = False
+
+        def execute(self, request):
+            return {"ok": True}
+
+        def close(self):
+            self.closed = True
+
+    adapter = ClosableAdapter()
+    app = create_app(trace_db=tmp_path / "trace.sqlite3", tool_adapter=adapter)
+
+    with TestClient(app) as client:
+        assert client.get("/healthz").status_code == 200
+
+    assert adapter.closed is True
 
 
 def test_gateway_can_call_safe_stdio_mcp_server(tmp_path):

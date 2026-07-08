@@ -12,14 +12,14 @@ Completed baseline:
 
 - MCP config scanner, metadata analyzer, policy engine, FastAPI gateway, trace recorder, replay evaluator, reports, public README, interview/resume material, project retrospective, MCP adapter design, and a stdio MCP adapter spike.
 - Public repository: <https://github.com/yourskenny/AgentGuard>
-- Current verification: `pytest` 102 passed, `ruff check .` passed.
+- Current verification: `pytest` 107 passed, `ruff check .` passed, `scripts/demo_e2e.py` passed.
 
 ## Progress
 
 - [x] [#1 Add CI workflow and README status badge](https://github.com/yourskenny/AgentGuard/issues/1)
 - [x] [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
 - [x] [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
-- [ ] [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
+- [x] [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
 
 ## Priority Order
 
@@ -68,6 +68,8 @@ Acceptance:
 ### P3: MCP Adapter Lifecycle Hardening
 
 GitHub issue: [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
+
+Status: complete. `MCPToolAdapter` now has explicit close semantics, health checks, startup timeout mapping, result-size limits, and gateway shutdown cleanup.
 
 Why next: the current adapter intentionally starts as a spike. Production-like reliability needs lifecycle and process hardening.
 

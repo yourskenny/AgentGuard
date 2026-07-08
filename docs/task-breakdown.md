@@ -51,6 +51,7 @@ M0 骨架已完成:
 - 2026-07-08: CI 与发布徽章整理已完成。新增 `.github/workflows/ci.yml`, 在 push main 和 pull_request 时安装 `.[dev]` 并运行 pytest/ruff; README 增加 CI badge; roadmap 标记 GitHub #1 完成。
 - 2026-07-08: 最小端到端 demo 脚本已完成。新增 `scripts/demo_e2e.py`, 一次性覆盖 scan、真实 stdio MCP adapter gateway allow、路径越界 deny、trace 读取和 85-case eval, 输出写入 `runs/demo/`; README 和 roadmap 已链接 GitHub #2。
 - 2026-07-08: 发布说明和示例录屏脚本已完成。新增 `docs/release-notes.md` 和 `docs/demo-recording-script.md`, 覆盖当前里程碑、验证证据、安全边界、2-3 分钟录屏流程和禁止夸大的表述; README 和 roadmap 已链接 GitHub #3。
+- 2026-07-08: MCP adapter 生命周期硬化已完成。`MCPToolAdapter` 新增显式 close 状态、`health_check()` 初始化/list-tools 检查、启动超时稳定映射、结果大小上限; FastAPI gateway shutdown 会调用 adapter `close()`; 本地验证为 107 passed、1 个上游 TestClient deprecation warning, ruff 和 `scripts/demo_e2e.py` 通过。
 
 ## 里程碑总览
 
@@ -484,6 +485,22 @@ M0 骨架已完成:
 - 所有能力表述都能落回仓库当前实现和验证证据。
 - pytest、ruff 和 CI 通过。
 
+## MCP adapter 生命周期硬化
+
+- [x] `MCPToolAdapter.close()` 设置关闭状态。
+- [x] 已关闭 adapter 拒绝继续执行并返回稳定错误码 `mcp_adapter_closed`。
+- [x] `health_check()` 会对已配置 server 执行 initialize/list-tools, 并返回 server 级健康状态。
+- [x] MCP server 启动超时映射为稳定错误码 `mcp_startup_timeout`。
+- [x] MCP result 超过大小上限时映射为稳定错误码 `mcp_result_too_large`。
+- [x] FastAPI gateway shutdown 会调用可关闭 adapter 的 `close()`。
+- [x] roadmap 标记 GitHub #4 完成。
+
+验收标准:
+
+- 现有 `ToolAdapter.execute()` gateway port 保持不变。
+- 生命周期、超时、结果大小和 shutdown cleanup 均有单测覆盖。
+- pytest、ruff 和 demo 验证通过后可关闭 GitHub #4。
+
 ## 依赖关系
 
 ```text
@@ -545,7 +562,7 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 建议下一轮从 MCP adapter 连接池与进程生命周期硬化开始, 按以下顺序做:
 
-1. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
+1. [x] MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
 2. 根据 CI 和 demo 结果回补 README quick start。
 3. 关闭或更新已完成 GitHub issues。
 4. 从 demo 输出中挑选稳定样例回补报告文档。

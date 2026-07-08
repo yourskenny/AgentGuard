@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +24,19 @@ def create_app(
     engine = PolicyEngine(config=config)
     recorder = TraceRecorder(trace_db)
     adapter = tool_adapter or MockToolAdapter()
-    app = FastAPI(title="AgentGuard Gateway", version="0.1.0")
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        try:
+            yield
+        finally:
+            close = getattr(adapter, "close", None)
+            if callable(close):
+                result = close()
+                if inspect.isawaitable(result):
+                    await result
+
+    app = FastAPI(title="AgentGuard Gateway", version="0.1.0", lifespan=lifespan)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
