@@ -31,6 +31,7 @@ M0 骨架已完成:
 - 2026-07-08: M2.2 已完成。新增 20 条 tool poisoning 描述注入回归样例, 覆盖忽略/覆盖指令、读取凭据、外发敏感内容、隐藏/系统/developer prompt、绕过策略; `tool_description_injection` 命中项保留匹配片段 evidence 和 recommendation, 并验证安全描述不误报。
 - 2026-07-08: M2.3 已完成。新增 16 条 schema 风险回归 case 和分数/负例测试, 覆盖 `command/cmd`、`path/file/filename`、`url/endpoint/webhook`、无类型 object、宽 `additionalProperties`、缺失 `required`; schema ambiguity 风险输出中高等级、结构化 evidence 和可解释分数。
 - 2026-07-08: M3.1 已完成。文件系统策略新增规范化路径测试和 20 个 deny case, 覆盖 `.env`、SSH key、pem、cookies、`../`、Windows/POSIX 绝对路径、反斜杠逃逸、嵌套 path 参数; policy evidence/recommendation 明确 parent traversal 与 symlink-resolved escape 风险。
+- 2026-07-08: M3.2 已完成。Shell 策略新增 13 条危险命令回归 case, 覆盖删除、格式化、权限破坏、`curl/wget | sh/bash`、PowerShell `iwr/Invoke-WebRequest | iex/Invoke-Expression` 和 encoded command; `shell/run_command/exec/execute/bash/powershell/pwsh` 默认 deny, 显式 allow 下 `pwd/ls/Get-Location` 可通过。
 
 ## 里程碑总览
 
@@ -162,10 +163,10 @@ M0 骨架已完成:
 
 ### M3.2 Shell 策略
 
-- [ ] 阻断删除、格式化、权限破坏类命令。
-- [ ] 阻断 `curl | bash`、`wget | sh`、PowerShell 远程执行。
-- [ ] 对任意 shell 工具默认 deny。
-- [ ] 将命中 pattern 写入 RiskRecord evidence。
+- [x] 阻断删除、格式化、权限破坏类命令。
+- [x] 阻断 `curl | bash`、`wget | sh`、PowerShell 远程执行。
+- [x] 对任意 shell 工具默认 deny。
+- [x] 将命中 pattern 写入 RiskRecord evidence。
 
 验收标准:
 
@@ -398,10 +399,10 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 建议下一轮从 M3 开始, 按以下顺序做:
 
-1. M3.2: 加强 Shell 策略。
-2. M3.3: 加强网络外发策略。
-3. M3.4: 增加脱敏策略。
-4. M4.1: 落地 Runtime Gateway API 契约。
-5. M4.2: Tool Adapter 抽象。
+1. M3.3: 加强网络外发策略。
+2. M3.4: 增加脱敏策略。
+3. M4.1: 落地 Runtime Gateway API 契约。
+4. M4.2: Tool Adapter 抽象。
+5. M4.3: Trace Recorder 完善。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

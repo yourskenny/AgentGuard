@@ -29,9 +29,16 @@ DANGEROUS_COMMAND_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     for pattern in (
         r"rm\s+-rf",
         r"del\s+/s",
+        r"remove-item\s+.*(-recurse|-r)\b.*(-force|-f)\b",
+        r"rmdir\s+/s",
         r"format\s+[a-z]:",
+        r"mkfs(\.[a-z0-9_]+)?\s+",
+        r"chmod\s+-r\s+",
+        r"chown\s+-r\s+",
         r"curl\s+.*\|\s*(sh|bash|pwsh|powershell)",
         r"wget\s+.*\|\s*(sh|bash|pwsh|powershell)",
+        r"(iwr|irm|invoke-webrequest|invoke-restmethod)\s+.*\|\s*(iex|invoke-expression)",
+        r"(powershell|pwsh)\s+.*(-enc|-encodedcommand)",
     )
 )
 

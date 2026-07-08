@@ -15,6 +15,7 @@ from agentguard.models import Decision, PolicyDecision, RiskRecord, Severity, To
 SENSITIVE_FILE_NAMES = {".env", "id_rsa", "id_ed25519", "cookies", "cookies.sqlite"}
 PATH_ARGUMENT_NAMES = {"file", "file_path", "filepath", "filename"}
 NETWORK_TOOLS = {"http_post", "post_url", "webhook", "upload", "send_request"}
+SHELL_TOOLS = {"shell", "run_command", "exec", "execute", "bash", "powershell", "pwsh", "cmd"}
 WRITE_TOOLS = {"write_file", "delete_file", "remove_file", "replace_file"}
 
 
@@ -55,6 +56,8 @@ class PolicyEngine:
         tool_policy = self.config.tools.get(tool_name)
         if tool_policy is not None:
             return tool_policy.action
+        if tool_name in SHELL_TOOLS:
+            return Decision.DENY
         if tool_name in WRITE_TOOLS:
             return Decision.CONFIRM
         if tool_name in NETWORK_TOOLS:
@@ -88,7 +91,7 @@ class PolicyEngine:
 
     def _shell_risks(self, request: ToolCallRequest) -> list[RiskRecord]:
         risks: list[RiskRecord] = []
-        if request.tool_name not in {"shell", "run_command", "exec", "execute"}:
+        if request.tool_name not in SHELL_TOOLS:
             command = request.arguments.get("command") or request.arguments.get("cmd")
             if command is None:
                 return risks
