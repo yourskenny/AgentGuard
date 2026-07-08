@@ -14,11 +14,20 @@ Completed baseline:
 - Public repository: <https://github.com/yourskenny/AgentGuard>
 - Current verification: `pytest` 102 passed, `ruff check .` passed.
 
+## Progress
+
+- [x] [#1 Add CI workflow and README status badge](https://github.com/yourskenny/AgentGuard/issues/1)
+- [ ] [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
+- [ ] [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
+- [ ] [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
+
 ## Priority Order
 
 ### P0: CI Workflow And Badge
 
 GitHub issue: [#1 Add CI workflow and README status badge](https://github.com/yourskenny/AgentGuard/issues/1)
+
+Status: complete. The workflow is `.github/workflows/ci.yml`; README links the workflow badge.
 
 Why next: every later slice should have remote verification instead of relying only on local checks.
 
@@ -73,4 +82,3 @@ Each issue should land as a focused commit with:
 - `pytest` and `ruff check .` evidence;
 - task-breakdown progress update;
 - remote SHA verification after push.
-

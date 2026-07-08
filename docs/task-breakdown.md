@@ -48,6 +48,7 @@ M0 骨架已完成:
 - 2026-07-08: 后续 MCP adapter 对接设计已完成。新增 `docs/mcp-adapter-design.md`, 比较三种接口形态并选择保留现有窄 `ToolAdapter.execute()` port、在具体 `MCPToolAdapter` 内部隐藏 registry/session/result/error 复杂度的方案。
 - 2026-07-08: 真实 MCP adapter 对接 spike 已完成。新增可选 `agentguard[mcp]` 依赖、`MCPToolAdapter`、CLI `proxy --mcp-config`、safe stdio MCP server fixture 和 gateway 集成测试; 当前全量验证为 102 passed、1 个上游 TestClient deprecation warning。
 - 2026-07-08: GitHub issues/roadmap 整理已完成。创建 #1 CI workflow、#2 最小端到端 demo、#3 发布说明与录屏脚本、#4 MCP adapter 生命周期硬化四个 GitHub issues, 并新增 `docs/roadmap.md` 固化优先级和验收标准。
+- 2026-07-08: CI 与发布徽章整理已完成。新增 `.github/workflows/ci.yml`, 在 push main 和 pull_request 时安装 `.[dev]` 并运行 pytest/ruff; README 增加 CI badge; roadmap 标记 GitHub #1 完成。
 
 ## 里程碑总览
 
@@ -432,6 +433,22 @@ M0 骨架已完成:
 - 下一步任务顺序明确。
 - 每个 issue 有目标、范围和验收标准。
 
+## CI 与发布徽章整理
+
+- [x] 新增 GitHub Actions workflow。
+- [x] workflow 覆盖 push main 和 pull_request。
+- [x] workflow 安装 `.[dev]`。
+- [x] workflow 运行 `python -m pytest`。
+- [x] workflow 运行 `python -m ruff check .`。
+- [x] README 增加 CI status badge。
+- [x] roadmap 标记 GitHub #1 完成。
+
+验收标准:
+
+- 本地 pytest 和 ruff 通过。
+- 推送后 GitHub Actions 远端 run 成功。
+- GitHub #1 可关闭。
+
 ## 依赖关系
 
 ```text
@@ -491,12 +508,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 CI 与发布徽章整理开始, 按以下顺序做:
+建议下一轮从最小端到端 demo 脚本开始, 按以下顺序做:
 
-1. CI 与发布徽章整理, 对应 GitHub #1。
-2. 最小端到端 demo 脚本, 对应 GitHub #2。
-3. 发布说明和示例录屏脚本, 对应 GitHub #3。
-4. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
-5. 根据 CI 和 demo 结果回补 README quick start。
+1. 最小端到端 demo 脚本, 对应 GitHub #2。
+2. 发布说明和示例录屏脚本, 对应 GitHub #3。
+3. MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
+4. 根据 CI 和 demo 结果回补 README quick start。
+5. 关闭或更新已完成 GitHub issues。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

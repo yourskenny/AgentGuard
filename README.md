@@ -1,5 +1,7 @@
 # AgentGuard
 
+[![CI](https://github.com/yourskenny/AgentGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/yourskenny/AgentGuard/actions/workflows/ci.yml)
+
 AgentGuard is a lightweight security and trajectory evaluation gateway for MCP-enabled AI agents. It focuses on three jobs:
 
 - Tool security gateway: scan MCP server config and tool metadata before an agent trusts them.
