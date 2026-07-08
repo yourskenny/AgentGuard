@@ -39,6 +39,7 @@ M0 骨架已完成:
 - 2026-07-08: M4.3 已完成。完整 tool call trace 现在按顺序记录 `policy_decision`、`tool_call`、`tool_result`; 阻断请求只记录 policy decision; adapter 错误记录 `tool_error`; call 链路中的参数摘要和结果摘要均验证不落原始 secret。
 - 2026-07-08: M5.1 已完成。`security_cases.jsonl` 扩展到 85 条, 覆盖 20 normal、20 tool poisoning、10 path escape、10 sensitive file、10 dangerous shell、10 network egress、5 cross-tool exfiltration; evaluator 支持可选 `tool` 元数据 case, poisoning case 会通过 metadata analyzer 纳入 `tool_description_injection` 风险召回。
 - 2026-07-08: M5.2 已完成。`EvaluationResult` 新增 `categoryMetrics`, JSON/Markdown eval report 输出分类通过率; 指标单测覆盖空数据、全安全、全风险、混合失败, 失败 case 保留 expected/actual decision 和 pass 状态。
+- 2026-07-08: M5.3 已完成。新增 failure demo eval case 和 `docs/report-samples/` 下 Markdown/JSON/SARIF 三份评测报告样例; Markdown eval report 增加风险分布和失败样例区块, README 已引用样例报告。
 
 ## 里程碑总览
 
@@ -49,7 +50,7 @@ M0 骨架已完成:
 | M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 已完成 |
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 已完成 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 已完成 |
-| M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 进行中 |
+| M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 已完成 |
 | M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
 
 ## M1: MCP 配置扫描增强
@@ -293,10 +294,10 @@ M0 骨架已完成:
 
 ### M5.3 回归报告样例
 
-- [ ] 生成一份 Markdown eval report。
-- [ ] 生成一份 JSON eval report。
-- [ ] 生成一份 SARIF report。
-- [ ] 将样例报告放入 docs 或 examples。
+- [x] 生成一份 Markdown eval report。
+- [x] 生成一份 JSON eval report。
+- [x] 生成一份 SARIF report。
+- [x] 将样例报告放入 docs 或 examples。
 
 验收标准:
 
@@ -404,12 +405,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 M5.3 开始, 按以下顺序做:
+建议下一轮从 M6.1 开始, 按以下顺序做:
 
-1. M5.3: 回归报告样例。
-2. M6.1: README 使用说明。
-3. M6.2: 报告样例和演示脚本。
-4. M6.3: 简历/面试材料。
-5. M6.4: 项目复盘与面试问答。
+1. M6.1: README 使用说明。
+2. M6.2: 报告样例和演示脚本。
+3. M6.3: 简历/面试材料。
+4. M6.4: 项目复盘与面试问答。
+5. 发布前 GitHub 同步和远端验证。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

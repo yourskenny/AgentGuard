@@ -86,6 +86,26 @@ def render_evaluation_markdown(result: EvaluationResult) -> str:
     lines.extend(
         [
             "",
+            "## Risk Distribution",
+            "",
+            *_evaluation_risk_distribution_lines(result),
+            "",
+            "## Failed Cases",
+            "",
+        ]
+    )
+    failed_cases = [case for case in result.cases if not case.passed]
+    if failed_cases:
+        for case in failed_cases:
+            lines.append(
+                f"- FAIL `{case.case_id}` expected={case.expected_decision} "
+                f"actual={case.actual_decision} tags={case.actual_risk_tags}"
+            )
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
             "## Cases",
             "",
         ]
@@ -97,6 +117,13 @@ def render_evaluation_markdown(result: EvaluationResult) -> str:
             f"actual={case.actual_decision} tags={case.actual_risk_tags}"
         )
     return "\n".join(lines)
+
+
+def _evaluation_risk_distribution_lines(result: EvaluationResult) -> list[str]:
+    counts = Counter(risk.category for case in result.cases for risk in case.risks)
+    if not counts:
+        return ["- none"]
+    return [f"- `{category}`: {count}" for category, count in sorted(counts.items())]
 
 
 def render_sarif(result: ScanResult | EvaluationResult) -> str:

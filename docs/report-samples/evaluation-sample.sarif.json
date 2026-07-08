@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AgentGuard",
+          "rules": [
+            {
+              "id": "dangerous_shell",
+              "name": "dangerous_shell",
+              "shortDescription": {
+                "text": "Deny destructive commands and remote script execution."
+              }
+            },
+            {
+              "id": "tool_description_injection",
+              "name": "tool_description_injection",
+              "shortDescription": {
+                "text": "Review the tool description and remove instructions that target the model."
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "dangerous_shell",
+          "level": "error",
+          "message": {
+            "text": "Command matched dangerous pattern: 'rm -rf'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "agentguard"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "tool_description_injection",
+          "level": "error",
+          "message": {
+            "text": "Tool description matched injection pattern: 'Ignore previous instructions'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "agentguard"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

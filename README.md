@@ -31,6 +31,12 @@ python -m venv .venv
 - [Implementation Plan](docs/implementation-plan.md)
 - [Task Breakdown](docs/task-breakdown.md)
 
+## Report Samples
+
+- [Evaluation Markdown](docs/report-samples/evaluation-sample.md)
+- [Evaluation JSON](docs/report-samples/evaluation-sample.json)
+- [Evaluation SARIF](docs/report-samples/evaluation-sample.sarif.json)
+
 ## Development Checks
 
 ```powershell
