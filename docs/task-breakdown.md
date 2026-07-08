@@ -21,12 +21,19 @@ M0 骨架已完成:
 
 接下来任务从 M1 开始。
 
+## 执行进度
+
+- 2026-07-08: 在 `codex/m1-config-scanner` 分支开始顺序执行任务清单。
+- 2026-07-08: M1.1 已完成。新增 6 个 MCP config fixture, 覆盖 `mcpServers`、`servers` 字典、`servers` 数组、YAML、缺失 `command`、非法 `args`、非法 `env`; scanner 现在会对非法 server 字段输出清晰错误; CLI 非法配置路径返回非 0 且不暴露 traceback。
+- 2026-07-08: M1.2 已完成。新增 server 级风险 fixture, 覆盖敏感 env、危险启动命令、未固定 `npx/uvx` 包来源、高权限目录参数; 每类风险至少 2 条测试 case; Markdown scan 报告可按 server 展示风险 evidence。
+- 2026-07-08: M1.3 已完成。scan Markdown 报告新增 Risk Distribution; JSON 报告保留结构化 risks; SARIF 报告测试覆盖 rules/results; CLI `scan --output` 写文件路径已验证。
+
 ## 里程碑总览
 
 | 里程碑 | 目标 | 主要产物 | 状态 |
 |---|---|---|---|
 | M0 | 可运行骨架 | CLI/API/模型/测试/基础 docs | 已完成 |
-| M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 待做 |
+| M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 已完成 |
 | M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 待做 |
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 待做 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 待做 |
@@ -39,11 +46,11 @@ M0 骨架已完成:
 
 ### M1.1 支持更多 MCP 配置结构
 
-- [ ] 支持 `mcpServers` 字典结构。
-- [ ] 支持 `servers` 字典结构。
-- [ ] 支持 `servers` 数组结构。
-- [ ] 支持 JSON 与 YAML 输入。
-- [ ] 对缺失 `command`、非法 `args`、非法 `env` 给出清晰错误。
+- [x] 支持 `mcpServers` 字典结构。
+- [x] 支持 `servers` 字典结构。
+- [x] 支持 `servers` 数组结构。
+- [x] 支持 JSON 与 YAML 输入。
+- [x] 对缺失 `command`、非法 `args`、非法 `env` 给出清晰错误。
 
 验收标准:
 
@@ -60,10 +67,10 @@ M0 骨架已完成:
 
 ### M1.2 增加 server 级风险识别
 
-- [ ] 检测敏感环境变量: token、secret、password、api key、private key。
-- [ ] 检测危险启动命令: shell 管道、远程脚本执行、删除命令。
-- [ ] 检测未固定依赖来源: `npx <pkg>`、`uvx <pkg>`、无版本约束包名。
-- [ ] 检测高权限目录参数: home、root、磁盘根目录、`../`。
+- [x] 检测敏感环境变量: token、secret、password、api key、private key。
+- [x] 检测危险启动命令: shell 管道、远程脚本执行、删除命令。
+- [x] 检测未固定依赖来源: `npx <pkg>`、`uvx <pkg>`、无版本约束包名。
+- [x] 检测高权限目录参数: home、root、磁盘根目录、`../`。
 
 验收标准:
 
@@ -73,10 +80,10 @@ M0 骨架已完成:
 
 ### M1.3 扫描报告完善
 
-- [ ] Markdown 报告展示 server 总数、tool 总数、风险分布。
-- [ ] JSON 报告保留完整结构化字段。
-- [ ] SARIF 报告按风险类型生成 rules 和 results。
-- [ ] CLI 支持 `--output` 写文件。
+- [x] Markdown 报告展示 server 总数、tool 总数、风险分布。
+- [x] JSON 报告保留完整结构化字段。
+- [x] SARIF 报告按风险类型生成 rules 和 results。
+- [x] CLI 支持 `--output` 写文件。
 
 验收标准:
 
@@ -394,4 +401,3 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 5. M3.1: 加强文件系统策略。
 
 这 5 个切片完成后, 项目就能从“骨架可跑”进入“扫描结果可信”的状态。
-

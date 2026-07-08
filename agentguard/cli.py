@@ -29,7 +29,10 @@ def scan(
     ] = "markdown",
 ) -> None:
     """Scan an MCP config and report server/tool risks."""
-    result = scan_mcp_config(config)
+    try:
+        result = scan_mcp_config(config)
+    except ValueError as exc:
+        _exit_with_error(str(exc))
     content = _render_scan(result, format_name)
     write_text(output, content)
 
@@ -40,7 +43,10 @@ def inspect(
     config: Annotated[Path, typer.Option("--config", "-c", exists=True, help="MCP config file.")],
 ) -> None:
     """Show normalized metadata and risk records for one server."""
-    record = inspect_server(config, server)
+    try:
+        record = inspect_server(config, server)
+    except (KeyError, ValueError) as exc:
+        _exit_with_error(str(exc))
     typer.echo(render_json(record))
 
 
@@ -78,8 +84,11 @@ def eval_command(
     ] = "markdown",
 ) -> None:
     """Replay safety cases through the policy engine."""
-    config = load_policy(policy)
-    result = evaluate_cases(load_cases(cases), config=config, base_dir=Path.cwd())
+    try:
+        config = load_policy(policy)
+        result = evaluate_cases(load_cases(cases), config=config, base_dir=Path.cwd())
+    except ValueError as exc:
+        _exit_with_error(str(exc))
     content = _render_eval(result, format_name)
     write_text(output, content)
 
@@ -120,3 +129,8 @@ def _parse_listen(value: str) -> tuple[str, int]:
         raise typer.BadParameter("listen must be HOST:PORT")
     host, port_text = value.rsplit(":", 1)
     return host, int(port_text)
+
+
+def _exit_with_error(message: str) -> None:
+    typer.echo(f"Error: {message}", err=True)
+    raise typer.Exit(1)

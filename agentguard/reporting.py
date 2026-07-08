@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,10 @@ def render_scan_markdown(result: ScanResult) -> str:
         f"- Tools: {result.total_tools}",
         f"- Risk tags: {', '.join(result.risk_tags) if result.risk_tags else 'none'}",
         "",
+        "## Risk Distribution",
+        "",
+        *_risk_distribution_lines(result),
+        "",
         "## Servers",
         "",
     ]
@@ -44,6 +49,13 @@ def render_scan_markdown(result: ScanResult) -> str:
                 lines.append(f"  - `{tool.tool_name}` score={tool.risk_score:.2f} tags={tags}")
         lines.append("")
     return "\n".join(lines)
+
+
+def _risk_distribution_lines(result: ScanResult) -> list[str]:
+    counts = Counter(risk.category for risk in result.risks)
+    if not counts:
+        return ["- none"]
+    return [f"- `{category}`: {count}" for category, count in sorted(counts.items())]
 
 
 def render_evaluation_markdown(result: EvaluationResult) -> str:

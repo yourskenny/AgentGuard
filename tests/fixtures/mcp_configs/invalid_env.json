@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "invalid-env": {
+      "command": "python",
+      "args": ["server.py"],
+      "env": ["OPENAI_API_KEY"]
+    }
+  }
+}
+

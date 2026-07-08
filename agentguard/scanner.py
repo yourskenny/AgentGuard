@@ -24,18 +24,30 @@ def load_config_file(path: str | Path) -> dict[str, Any]:
 
 def _server_items(raw: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
     if isinstance(raw.get("mcpServers"), dict):
-        return [(str(name), value or {}) for name, value in raw["mcpServers"].items()]
+        return [
+            _validated_server_item(str(name), value, "mcpServers")
+            for name, value in raw["mcpServers"].items()
+        ]
     if isinstance(raw.get("servers"), dict):
-        return [(str(name), value or {}) for name, value in raw["servers"].items()]
+        return [
+            _validated_server_item(str(name), value, "servers")
+            for name, value in raw["servers"].items()
+        ]
     if isinstance(raw.get("servers"), list):
         items = []
         for index, value in enumerate(raw["servers"]):
             if not isinstance(value, dict):
-                continue
+                raise ValueError(f"servers[{index}] must be an object.")
             name = value.get("name") or f"server_{index + 1}"
-            items.append((str(name), value))
+            items.append(_validated_server_item(str(name), value, f"servers[{index}]"))
         return items
     raise ValueError("Unsupported MCP config: expected 'mcpServers' or 'servers'.")
+
+
+def _validated_server_item(name: str, value: Any, location: str) -> tuple[str, dict[str, Any]]:
+    if not isinstance(value, dict):
+        raise ValueError(f"{location}.{name} must be an object.")
+    return name, value
 
 
 def _tool_records(server_name: str, raw_tools: Any) -> list[ToolRecord]:
@@ -63,17 +75,24 @@ def _tool_records(server_name: str, raw_tools: Any) -> list[ToolRecord]:
 
 
 def normalize_server(name: str, raw: dict[str, Any], source: str) -> MCPServerRecord:
-    command = str(raw.get("command") or raw.get("cmd") or "")
-    args = raw.get("args") or []
-    if isinstance(args, str):
-        args = [args]
-    env = raw.get("env") or {}
+    command = raw.get("command") or raw.get("cmd")
+    if not isinstance(command, str) or not command.strip():
+        raise ValueError(f"Server {name!r} field 'command' must be a non-empty string.")
+
+    args = raw.get("args", [])
+    if not isinstance(args, list) or not all(isinstance(arg, str) for arg in args):
+        raise ValueError(f"Server {name!r} field 'args' must be a list of strings.")
+
+    env = raw.get("env", {})
+    if not isinstance(env, dict) or not all(isinstance(key, str) for key in env):
+        raise ValueError(f"Server {name!r} field 'env' must be an object with string keys.")
+
     env_keys = list(env.keys()) if isinstance(env, dict) else []
     tools = _tool_records(name, raw.get("tools") or raw.get("toolDefinitions"))
 
     return MCPServerRecord(
         name=name,
-        command=command,
+        command=command.strip(),
         args=[str(arg) for arg in args],
         env_keys=[str(key) for key in env_keys],
         source=str(raw.get("source") or source),

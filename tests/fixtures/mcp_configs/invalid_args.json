@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "invalid-args": {
+      "command": "python",
+      "args": { "script": "server.py" },
+      "env": {}
+    }
+  }
+}
+

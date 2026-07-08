@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "missing-command": {
+      "args": ["server.py"],
+      "env": {}
+    }
+  }
+}
+

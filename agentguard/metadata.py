@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from pathlib import PureWindowsPath
 from typing import Any
 
 from agentguard.models import MCPServerRecord, RiskRecord, Severity, ToolRecord
@@ -32,6 +33,8 @@ SENSITIVE_ENV_PATTERN = re.compile(
     r"(TOKEN|SECRET|PASSWORD|API[_-]?KEY|PRIVATE[_-]?KEY)", re.IGNORECASE
 )
 SENSITIVE_SCHEMA_FIELDS = {"path", "file", "filename", "command", "cmd", "url", "endpoint"}
+PACKAGE_RUNNERS = {"npx", "uvx"}
+WINDOWS_DRIVE_ROOT_PATTERN = re.compile(r"^[a-zA-Z]:[\\/]*$")
 
 
 def risk(
@@ -194,11 +197,99 @@ def analyze_server(server: MCPServerRecord) -> MCPServerRecord:
             )
         )
 
+    unpinned_package = _unpinned_package_source(server.command, server.args)
+    if unpinned_package:
+        risks.append(
+            risk(
+                "untrusted_source",
+                Severity.MEDIUM,
+                f"Server starts package runner without a pinned version: {unpinned_package}",
+                "Pin MCP server package versions before allowing them in trusted agent workflows.",
+            )
+        )
+
+    broad_arg = _broad_filesystem_arg(server.args)
+    if broad_arg:
+        risks.append(
+            risk(
+                "broad_filesystem_scope",
+                Severity.HIGH,
+                f"Server launch arguments expose a broad filesystem scope: {broad_arg}",
+                "Restrict server roots to a project workspace instead of home, "
+                "parent, or drive roots.",
+            )
+        )
+
     analyzed_tools = [
         analyze_tool(server.name, tool.tool_name, tool.description, tool.input_schema)
         for tool in server.tools
     ]
     return server.model_copy(update={"tools": analyzed_tools, "risks": risks})
+
+
+def _command_name(command: str) -> str:
+    name = PureWindowsPath(command).name.lower()
+    for suffix in (".cmd", ".exe", ".ps1"):
+        if name.endswith(suffix):
+            return name[: -len(suffix)]
+    return name
+
+
+def _first_package_arg(args: list[str]) -> str | None:
+    skip_next = False
+    for arg in args:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in {"--package", "-p"}:
+            skip_next = True
+            continue
+        if arg.startswith("-"):
+            continue
+        return arg
+    return None
+
+
+def _is_npm_package_pinned(package: str) -> bool:
+    if package.startswith("@"):
+        return package.count("@") >= 2
+    return "@" in package
+
+
+def _is_python_package_pinned(package: str) -> bool:
+    return any(operator in package for operator in ("==", ">=", "<=", "~=", "==="))
+
+
+def _unpinned_package_source(command: str, args: list[str]) -> str | None:
+    runner = _command_name(command)
+    if runner not in PACKAGE_RUNNERS:
+        return None
+
+    package = _first_package_arg(args)
+    if not package:
+        return runner
+    if runner == "npx" and not _is_npm_package_pinned(package):
+        return f"{runner} {package}"
+    if runner == "uvx" and not _is_python_package_pinned(package):
+        return f"{runner} {package}"
+    return None
+
+
+def _broad_filesystem_arg(args: list[str]) -> str | None:
+    for arg in args:
+        normalized = arg.strip()
+        lowered = normalized.lower()
+        if normalized in {"/", "\\", "..", "../", "..\\"}:
+            return normalized
+        if lowered in {"~", "~/", "~\\", "$home", "%userprofile%"}:
+            return normalized
+        if normalized.startswith("../") or normalized.startswith("..\\"):
+            return normalized
+        if normalized.startswith("~/") or normalized.startswith("~\\"):
+            return normalized
+        if WINDOWS_DRIVE_ROOT_PATTERN.fullmatch(normalized):
+            return normalized
+    return None
 
 
 def collect_risks(servers: Iterable[MCPServerRecord]) -> list[RiskRecord]:
