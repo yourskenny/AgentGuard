@@ -37,6 +37,7 @@ M0 骨架已完成:
 - 2026-07-08: M4.1 已完成。FastAPI TestClient 契约测试覆盖 `/healthz`、`/v1/tool-calls:authorize`、`/v1/tool-calls`、`/v1/traces`、`/v1/runs/{run_id}/trace`; deny 返回 403, confirm 返回 409, authorize 只写 policy_decision 不写 tool_result。
 - 2026-07-08: M4.2 已完成。新增 `ToolAdapter` 协议、`MockToolAdapter` 和 `ToolAdapterError`; gateway 支持 adapter 注入, deny/confirm 不执行 adapter, allow 返回结构化 mock result, adapter 错误返回 502 并记录 `tool_error` trace event。
 - 2026-07-08: M4.3 已完成。完整 tool call trace 现在按顺序记录 `policy_decision`、`tool_call`、`tool_result`; 阻断请求只记录 policy decision; adapter 错误记录 `tool_error`; call 链路中的参数摘要和结果摘要均验证不落原始 secret。
+- 2026-07-08: M5.1 已完成。`security_cases.jsonl` 扩展到 85 条, 覆盖 20 normal、20 tool poisoning、10 path escape、10 sensitive file、10 dangerous shell、10 network egress、5 cross-tool exfiltration; evaluator 支持可选 `tool` 元数据 case, poisoning case 会通过 metadata analyzer 纳入 `tool_description_injection` 风险召回。
 
 ## 里程碑总览
 
@@ -47,7 +48,7 @@ M0 骨架已完成:
 | M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 已完成 |
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 已完成 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 已完成 |
-| M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
+| M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 进行中 |
 | M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
 
 ## M1: MCP 配置扫描增强
@@ -259,13 +260,13 @@ M0 骨架已完成:
 
 ### M5.1 扩展 JSONL Case 集
 
-- [ ] 正常工具调用 20 条。
-- [ ] Tool Poisoning 20 条。
-- [ ] 路径越界 10 条。
-- [ ] 敏感文件读取 10 条。
-- [ ] 危险 shell 命令 10 条。
-- [ ] 网络外发 10 条。
-- [ ] 跨工具组合风险 5 条。
+- [x] 正常工具调用 20 条。
+- [x] Tool Poisoning 20 条。
+- [x] 路径越界 10 条。
+- [x] 敏感文件读取 10 条。
+- [x] 危险 shell 命令 10 条。
+- [x] 网络外发 10 条。
+- [x] 跨工具组合风险 5 条。
 
 验收标准:
 
@@ -402,12 +403,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 M5.1 开始, 按以下顺序做:
+建议下一轮从 M5.2 开始, 按以下顺序做:
 
-1. M5.1: 扩展 JSONL case。
-2. M5.2: 指标计算完善。
-3. M5.3: 回归报告样例。
-4. M6.1: README 使用说明。
-5. M6.2: 报告样例和演示脚本。
+1. M5.2: 指标计算完善。
+2. M5.3: 回归报告样例。
+3. M6.1: README 使用说明。
+4. M6.2: 报告样例和演示脚本。
+5. M6.3: 简历/面试材料。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

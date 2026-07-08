@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 from agentguard.config import AgentGuardConfig
+from agentguard.metadata import analyze_tool
 from agentguard.models import (
     CaseEvaluation,
     Decision,
@@ -43,7 +44,17 @@ def evaluate_cases(
         start = time.perf_counter()
         decision = engine.evaluate(case.request)
         latency_ms = (time.perf_counter() - start) * 1000
+        risks = list(decision.risks)
         actual_tags = set(decision.risk_tags)
+        if case.tool is not None:
+            analyzed_tool = analyze_tool(
+                case.tool.server_name,
+                case.tool.tool_name,
+                case.tool.description,
+                case.tool.input_schema,
+            )
+            actual_tags.update(analyzed_tool.risk_tags)
+            risks.extend(analyzed_tool.risks)
         expected_tags = set(case.expected_risk_tags)
         passed = decision.action == case.expected_decision and expected_tags.issubset(actual_tags)
         case_results.append(
@@ -53,10 +64,10 @@ def evaluate_cases(
                 expected_decision=case.expected_decision,
                 actual_decision=decision.action,
                 expected_risk_tags=case.expected_risk_tags,
-                actual_risk_tags=decision.risk_tags,
+                actual_risk_tags=sorted(actual_tags),
                 passed=passed,
                 latency_ms=latency_ms,
-                risks=decision.risks,
+                risks=risks,
             )
         )
 

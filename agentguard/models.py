@@ -147,6 +147,7 @@ class EvaluationCase(CamelModel):
     case_id: str
     category: str
     request: ToolCallRequest
+    tool: ToolRecord | None = None
     expected_decision: Decision
     expected_risk_tags: list[str] = Field(default_factory=list)
 
