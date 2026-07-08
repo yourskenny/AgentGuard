@@ -52,6 +52,7 @@ analyzes it with the metadata analyzer and merges detected risk tags into
 - `ToolCallAccuracy`: reserved for later LLM/tool selection evaluation.
 - `LatencyOverhead`: average policy evaluation time in milliseconds.
 - `RedactionCoverage`: percentage of redaction-expected cases with redacted arguments.
+- `CategoryMetrics`: per-category total cases, passed cases, failed cases, and pass rate.
 
 ## M0 Dataset
 
@@ -69,6 +70,7 @@ The initial fixture is deliberately tiny and used only for smoke tests. The M4 t
 Every evaluation report must include:
 
 - Metric summary.
+- Category pass rates.
 - Case-level actual versus expected decision.
 - Risk tags and evidence.
 - Failed cases.

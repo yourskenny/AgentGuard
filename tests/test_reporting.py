@@ -1,6 +1,9 @@
 import json
 from pathlib import Path
 
+from agentguard.config import default_config
+from agentguard.evaluator import evaluate_cases
+from agentguard.models import Decision, EvaluationCase, ToolCallRequest
 from agentguard.reporting import (
     render_empty_report,
     render_json,
@@ -64,3 +67,30 @@ def test_render_scan_sarif_contains_rules_and_results():
         "untrusted_source",
     }
     assert len(run["results"]) == 8
+
+
+def test_render_evaluation_json_contains_metrics_categories_and_failure_details():
+    result = evaluate_cases(
+        [
+            EvaluationCase(
+                case_id="json-failure-001",
+                category="normal",
+                request=ToolCallRequest(
+                    tool_name="write_file",
+                    arguments={"path": "README.md", "content": "x"},
+                ),
+                expected_decision=Decision.ALLOW,
+            )
+        ],
+        config=default_config(),
+        base_dir=Path.cwd(),
+    )
+
+    payload = json.loads(render_json(result))
+
+    assert payload["metrics"]["totalCases"] == 1
+    assert payload["categoryMetrics"][0]["category"] == "normal"
+    assert payload["categoryMetrics"][0]["passRate"] == 0.0
+    assert payload["cases"][0]["passed"] is False
+    assert payload["cases"][0]["expectedDecision"] == "allow"
+    assert payload["cases"][0]["actualDecision"] == "confirm"

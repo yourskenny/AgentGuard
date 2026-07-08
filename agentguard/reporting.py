@@ -72,9 +72,24 @@ def render_evaluation_markdown(result: EvaluationResult) -> str:
         f"- TraceCoverage: {metrics.trace_coverage:.2%}",
         f"- LatencyOverhead: {metrics.latency_overhead_ms:.2f} ms",
         "",
-        "## Cases",
+        "## Category Metrics",
         "",
     ]
+    if result.category_metrics:
+        for item in result.category_metrics:
+            lines.append(
+                f"- `{item.category}`: {item.passed_cases}/{item.total_cases} "
+                f"passed ({item.pass_rate:.2%})"
+            )
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Cases",
+            "",
+        ]
+    )
     for case in result.cases:
         status = "PASS" if case.passed else "FAIL"
         lines.append(

@@ -175,8 +175,17 @@ class EvaluationMetrics(CamelModel):
     redaction_coverage: float = 0.0
 
 
+class CategoryMetric(CamelModel):
+    category: str
+    total_cases: int = 0
+    passed_cases: int = 0
+    failed_cases: int = 0
+    pass_rate: float = 0.0
+
+
 class EvaluationResult(CamelModel):
     metrics: EvaluationMetrics
+    category_metrics: list[CategoryMetric] = Field(default_factory=list)
     cases: list[CaseEvaluation] = Field(default_factory=list)
 
 

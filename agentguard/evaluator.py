@@ -8,6 +8,7 @@ from agentguard.config import AgentGuardConfig
 from agentguard.metadata import analyze_tool
 from agentguard.models import (
     CaseEvaluation,
+    CategoryMetric,
     Decision,
     EvaluationCase,
     EvaluationMetrics,
@@ -71,7 +72,11 @@ def evaluate_cases(
             )
         )
 
-    return EvaluationResult(metrics=_compute_metrics(case_results), cases=case_results)
+    return EvaluationResult(
+        metrics=_compute_metrics(case_results),
+        category_metrics=_compute_category_metrics(case_results),
+        cases=case_results,
+    )
 
 
 def _compute_metrics(cases: list[CaseEvaluation]) -> EvaluationMetrics:
@@ -100,6 +105,24 @@ def _compute_metrics(cases: list[CaseEvaluation]) -> EvaluationMetrics:
         latency_overhead_ms=sum(case.latency_ms for case in cases) / total if total else 0.0,
         redaction_coverage=_ratio(len(redacted), len(redact_cases)),
     )
+
+
+def _compute_category_metrics(cases: list[CaseEvaluation]) -> list[CategoryMetric]:
+    metrics: list[CategoryMetric] = []
+    categories = sorted({case.category for case in cases})
+    for category in categories:
+        category_cases = [case for case in cases if case.category == category]
+        passed_cases = [case for case in category_cases if case.passed]
+        metrics.append(
+            CategoryMetric(
+                category=category,
+                total_cases=len(category_cases),
+                passed_cases=len(passed_cases),
+                failed_cases=len(category_cases) - len(passed_cases),
+                pass_rate=_ratio(len(passed_cases), len(category_cases)),
+            )
+        )
+    return metrics
 
 
 def _ratio(numerator: int, denominator: int) -> float:
