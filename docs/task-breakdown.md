@@ -1,0 +1,397 @@
+# AgentGuard 任务清单拆解
+
+## 读者与用途
+
+本文面向后续继续实现 AgentGuard 的开发者。读完后应该能够按阶段领取任务、理解依赖关系、明确每个任务的验收方式, 并把当前可运行骨架逐步推进到可展示的 MCP 工具安全与 Agent 轨迹评测网关。
+
+拆解原则:
+
+- 每个阶段都交付一个可运行、可测试、可演示的闭环。
+- 优先完成能降低最大不确定性的任务: 真实 MCP 配置扫描、运行时策略拦截、trace 可追踪、eval 可量化。
+- 每个任务都要有验收标准, 不接受“代码写完但无法证明”的完成状态。
+- 第一版不做大平台, 不做复杂 UI, 不做完整沙箱, 先把 CLI + Gateway + Eval + Report 闭环做扎实。
+
+## 当前基线
+
+M0 骨架已完成:
+
+- Python 包、CLI、FastAPI gateway、Pydantic 模型、YAML policy、SQLite trace、JSONL evaluator 和报告模块已存在。
+- 示例 MCP 配置、策略文件和 5 条安全 case 已存在。
+- 本地验证已通过: pytest、ruff、scan smoke、eval smoke。
+
+接下来任务从 M1 开始。
+
+## 里程碑总览
+
+| 里程碑 | 目标 | 主要产物 | 状态 |
+|---|---|---|---|
+| M0 | 可运行骨架 | CLI/API/模型/测试/基础 docs | 已完成 |
+| M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 待做 |
+| M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 待做 |
+| M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 待做 |
+| M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 待做 |
+| M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
+| M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
+
+## M1: MCP 配置扫描增强
+
+目标: `agentguard scan` 能处理更接近真实项目的 MCP 配置, 并输出 server、tool、env、command、source 和风险证据。
+
+### M1.1 支持更多 MCP 配置结构
+
+- [ ] 支持 `mcpServers` 字典结构。
+- [ ] 支持 `servers` 字典结构。
+- [ ] 支持 `servers` 数组结构。
+- [ ] 支持 JSON 与 YAML 输入。
+- [ ] 对缺失 `command`、非法 `args`、非法 `env` 给出清晰错误。
+
+验收标准:
+
+- 至少 6 个 fixture 覆盖不同配置结构。
+- `agentguard scan --config <fixture>` 对合法配置返回 0。
+- 非法配置返回非 0, 错误信息包含具体字段名。
+
+推荐测试:
+
+```powershell
+.\.venv\Scripts\python -m pytest tests/test_scanner.py
+.\.venv\Scripts\agentguard scan --config examples\mcp.sample.json --format json
+```
+
+### M1.2 增加 server 级风险识别
+
+- [ ] 检测敏感环境变量: token、secret、password、api key、private key。
+- [ ] 检测危险启动命令: shell 管道、远程脚本执行、删除命令。
+- [ ] 检测未固定依赖来源: `npx <pkg>`、`uvx <pkg>`、无版本约束包名。
+- [ ] 检测高权限目录参数: home、root、磁盘根目录、`../`。
+
+验收标准:
+
+- 每种风险至少 2 条测试 case。
+- 每条风险输出 `RiskRecord`, 包含 severity、category、evidence、recommendation。
+- 扫描报告能按 server 展示风险证据。
+
+### M1.3 扫描报告完善
+
+- [ ] Markdown 报告展示 server 总数、tool 总数、风险分布。
+- [ ] JSON 报告保留完整结构化字段。
+- [ ] SARIF 报告按风险类型生成 rules 和 results。
+- [ ] CLI 支持 `--output` 写文件。
+
+验收标准:
+
+- 三种格式都能从同一个 scan result 生成。
+- Markdown 报告对人可读, JSON 报告可被测试解析, SARIF 报告符合基本 schema。
+
+## M2: Tool Metadata Analyzer 增强
+
+目标: 静态分析工具名称、描述、schema 和能力, 形成可解释风险画像。
+
+### M2.1 工具能力分类
+
+- [ ] 分类 filesystem read。
+- [ ] 分类 filesystem write。
+- [ ] 分类 shell execution。
+- [ ] 分类 network egress。
+- [ ] 分类 database access。
+- [ ] 分类 browser automation。
+- [ ] 分类 credential/env access。
+
+验收标准:
+
+- 每类能力至少 2 条测试。
+- 一个 tool 可以同时拥有多个 capability。
+- capability 与风险标签分离: capability 描述能力, risk tag 描述风险。
+
+### M2.2 描述注入检测
+
+- [ ] 检测忽略原始指令类短语。
+- [ ] 检测读取 secret/token/credential 类短语。
+- [ ] 检测外发/上传/发送敏感内容类短语。
+- [ ] 检测隐藏提示词、系统提示词、developer message 相关短语。
+- [ ] 保留匹配片段作为 evidence。
+
+验收标准:
+
+- 20 条 tool poisoning fixture。
+- RiskRecall 在 poisoning fixture 上达到 90% 以上。
+- 每个命中项都能解释为什么命中。
+
+### M2.3 Schema 风险检测
+
+- [ ] 检测任意 `command` / `cmd` 参数。
+- [ ] 检测任意 `path` / `file` 参数。
+- [ ] 检测任意 `url` / `endpoint` / `webhook` 参数。
+- [ ] 检测无类型 object、additionalProperties 过宽、缺失 required。
+- [ ] 给 schema ambiguity 赋中风险或高风险等级。
+
+验收标准:
+
+- schema 风险测试不少于 15 条。
+- 风险分数可解释, 不只靠单一关键字。
+- 工具风险分数在 0 到 1 之间稳定输出。
+
+## M3: Policy Engine 闭环
+
+目标: 对真实 tool call 参数做运行时策略决策, 支持 allow、deny、confirm、redact。
+
+### M3.1 文件系统策略
+
+- [ ] 规范化相对路径和绝对路径。
+- [ ] 阻断 allowed roots 之外的路径。
+- [ ] 阻断敏感文件名和 glob pattern。
+- [ ] 支持 Windows 路径和 POSIX 路径。
+- [ ] 对软链接逃逸风险给出策略说明。
+
+验收标准:
+
+- 文件策略测试不少于 20 条。
+- `.env`、SSH key、pem、cookies、`../` 都被阻断。
+- 合法 workspace 文件不误杀。
+
+### M3.2 Shell 策略
+
+- [ ] 阻断删除、格式化、权限破坏类命令。
+- [ ] 阻断 `curl | bash`、`wget | sh`、PowerShell 远程执行。
+- [ ] 对任意 shell 工具默认 deny。
+- [ ] 将命中 pattern 写入 RiskRecord evidence。
+
+验收标准:
+
+- 危险命令全部 deny。
+- 普通只读命令如 `pwd`、`ls` 在显式 allow 策略下可通过。
+- 默认策略不允许任意 shell 执行。
+
+### M3.3 网络外发策略
+
+- [ ] 对 POST、upload、webhook、send request 默认 confirm。
+- [ ] 支持域名 allowlist。
+- [ ] 支持阻断内网地址、metadata IP 和 localhost 外发。
+- [ ] 支持跨工具数据外发风险标记。
+
+验收标准:
+
+- 外部 URL 默认 confirm。
+- allowlist 命中可 allow。
+- 内网敏感地址被 deny。
+
+### M3.4 脱敏策略
+
+- [ ] 对 key 名包含 token、secret、password、api_key 的参数脱敏。
+- [ ] 对 tool result 摘要执行同样脱敏。
+- [ ] 保留 redaction count 指标。
+- [ ] 避免把完整 secret 写入 trace。
+
+验收标准:
+
+- 脱敏测试不少于 10 条。
+- trace 和报告中不出现原始 secret。
+- redaction case 在 evaluator 中能统计覆盖率。
+
+## M4: Runtime Gateway 闭环
+
+目标: FastAPI gateway 能在工具调用前授权、阻断或确认, 并记录完整 trace。
+
+### M4.1 API 契约落地
+
+- [ ] 实现 `/healthz`。
+- [ ] 实现 `/v1/tool-calls:authorize`。
+- [ ] 实现 `/v1/tool-calls`。
+- [ ] 实现 `/v1/traces`。
+- [ ] 实现 `/v1/runs/{run_id}/trace`。
+- [ ] 统一错误体, 禁止 200-with-error。
+
+验收标准:
+
+- 使用 FastAPI TestClient 覆盖每个 endpoint。
+- deny 返回 403。
+- confirm 返回 409。
+- authorize 不执行 adapter。
+
+### M4.2 Tool Adapter 抽象
+
+- [ ] 定义 adapter interface。
+- [ ] 实现 mock adapter。
+- [ ] 为后续 MCP adapter 保留接口。
+- [ ] 确保 deny 请求不会调用 adapter。
+
+验收标准:
+
+- 单测证明 deny 时 adapter call count 为 0。
+- allow 时 mock adapter 返回结构化 result。
+- adapter 错误被记录为 trace error event。
+
+### M4.3 Trace Recorder 完善
+
+- [ ] 记录 policy_decision。
+- [ ] 记录 tool_call。
+- [ ] 记录 tool_result。
+- [ ] 记录 error。
+- [ ] 支持按 run_id 读取事件。
+- [ ] 支持参数摘要和结果摘要。
+
+验收标准:
+
+- 一次完整 tool call 至少产生 policy_decision 和 tool_result。
+- 阻断请求产生 policy_decision, 不产生 tool_result。
+- trace 不保存未脱敏 secret。
+
+## M5: Replay Evaluation 闭环
+
+目标: 构造足够覆盖的安全回归集, 用指标证明 AgentGuard 的策略效果。
+
+### M5.1 扩展 JSONL Case 集
+
+- [ ] 正常工具调用 20 条。
+- [ ] Tool Poisoning 20 条。
+- [ ] 路径越界 10 条。
+- [ ] 敏感文件读取 10 条。
+- [ ] 危险 shell 命令 10 条。
+- [ ] 网络外发 10 条。
+- [ ] 跨工具组合风险 5 条。
+
+验收标准:
+
+- case 总数不少于 60。
+- 每条 case 有 category、request、expectedDecision、expectedRiskTags。
+- eval 可一次性跑完整数据集。
+
+### M5.2 指标计算完善
+
+- [ ] RiskRecall。
+- [ ] FalsePositiveRate。
+- [ ] PolicyViolationBlockRate。
+- [ ] TraceCoverage。
+- [ ] LatencyOverhead。
+- [ ] RedactionCoverage。
+- [ ] 按 category 输出通过率。
+
+验收标准:
+
+- JSON 报告包含总指标和分类指标。
+- 失败 case 显示 expected vs actual。
+- 指标计算有单测覆盖边界情况: 空数据、全安全、全风险、混合数据。
+
+### M5.3 回归报告样例
+
+- [ ] 生成一份 Markdown eval report。
+- [ ] 生成一份 JSON eval report。
+- [ ] 生成一份 SARIF report。
+- [ ] 将样例报告放入 docs 或 examples。
+
+验收标准:
+
+- README 能引用报告样例。
+- 报告能展示风险分布和失败样例。
+- SARIF 中至少包含 rule 和 result。
+
+## M6: 展示与简历材料
+
+目标: 让项目具备公开展示、面试讲解和简历引用条件。
+
+### M6.1 README 完善
+
+- [ ] 写清楚项目定位: 工具安全闸门、轨迹黑盒、回放评测器。
+- [ ] 给出 quick start。
+- [ ] 展示 scan 输出样例。
+- [ ] 展示 eval 指标样例。
+- [ ] 说明非目标和安全边界。
+
+验收标准:
+
+- 新读者 5 分钟内能跑出 scan 和 eval。
+- README 不夸大安全能力, 明确是轻量级策略网关。
+
+### M6.2 面试讲解材料
+
+- [ ] 准备 30 秒版本。
+- [ ] 准备 2 分钟版本。
+- [ ] 准备 5 分钟架构展开版本。
+- [ ] 准备常见追问回答。
+
+验收标准:
+
+- 讲解能覆盖背景、架构、策略、trace、eval、指标。
+- 能解释和业务 Agent、LangSmith/Langfuse、MCP server 自带安全机制的区别。
+
+### M6.3 简历 bullet
+
+- [ ] 写稳健版 4 条。
+- [ ] 写 Agent 工程基础设施版 4 条。
+- [ ] 每条 bullet 对应真实已实现功能或可验证报告。
+- [ ] 删除未完成或无法证明的表述。
+
+验收标准:
+
+- 简历描述和仓库功能一致。
+- 每个关键数字都有报告或测试支撑。
+
+## 依赖关系
+
+```text
+M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
+          \          \          /
+           ---------->----------
+```
+
+说明:
+
+- M1 和 M2 都服务于风险识别, M2 可以在 M1 基础上迭代。
+- M3 依赖 M1/M2 的风险分类, 但可以先用当前模型独立推进。
+- M4 依赖 M3 的策略决策, 但 gateway endpoint 测试可提前完善。
+- M5 依赖 M3/M4 的策略与 trace 行为。
+- M6 必须在 M5 有稳定指标后再写最终展示材料。
+
+## 优先级建议
+
+第一优先级:
+
+- M1.1 配置结构支持。
+- M1.2 server 级风险识别。
+- M3.1 文件系统策略。
+- M3.2 Shell 策略。
+- M4.1 API 契约落地。
+
+第二优先级:
+
+- M2.2 描述注入检测。
+- M2.3 Schema 风险检测。
+- M4.2 Tool Adapter 抽象。
+- M4.3 Trace Recorder 完善。
+- M5.1 扩展 JSONL case。
+
+第三优先级:
+
+- M5.2 指标计算完善。
+- M5.3 回归报告样例。
+- M6 README、面试、简历材料。
+
+## Definition of Done
+
+一个任务只有同时满足以下条件才算完成:
+
+- 对应代码、配置或文档已落地。
+- 有单测或 CLI/API smoke 证明行为。
+- 风险决策有结构化 evidence。
+- README 或 docs 中能找到入口说明。
+- pytest 和 ruff 通过。
+
+一个里程碑只有同时满足以下条件才算完成:
+
+- 该里程碑所有任务完成。
+- 至少有一个端到端命令或 API 调用可以演示。
+- 报告或 trace 能证明结果。
+- 没有与当前架构文档冲突的行为。
+
+## 下一步执行切片
+
+建议下一轮从 M1 开始, 按以下顺序做:
+
+1. M1.1: 补齐 MCP config fixture 和解析错误处理。
+2. M1.2: 增加 server 风险规则与测试。
+3. M1.3: 固化 scan 报告格式。
+4. M2.1: 扩展 tool capability 分类。
+5. M3.1: 加强文件系统策略。
+
+这 5 个切片完成后, 项目就能从“骨架可跑”进入“扫描结果可信”的状态。
+

@@ -1,0 +1,35 @@
+default_action: confirm
+
+filesystem:
+  allowed_roots:
+    - .
+  deny_patterns:
+    - ".env"
+    - ".env.*"
+    - "id_rsa"
+    - "id_ed25519"
+    - "*.pem"
+    - "cookies.sqlite"
+
+tools:
+  shell:
+    action: deny
+  run_command:
+    action: deny
+  read_file:
+    action: allow
+    require_path_check: true
+  write_file:
+    action: confirm
+    require_path_check: true
+  http_post:
+    action: confirm
+
+redaction:
+  enabled: true
+  patterns:
+    - api_key
+    - token
+    - password
+    - secret
+
