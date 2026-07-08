@@ -32,6 +32,7 @@ M0 骨架已完成:
 - 2026-07-08: M2.3 已完成。新增 16 条 schema 风险回归 case 和分数/负例测试, 覆盖 `command/cmd`、`path/file/filename`、`url/endpoint/webhook`、无类型 object、宽 `additionalProperties`、缺失 `required`; schema ambiguity 风险输出中高等级、结构化 evidence 和可解释分数。
 - 2026-07-08: M3.1 已完成。文件系统策略新增规范化路径测试和 20 个 deny case, 覆盖 `.env`、SSH key、pem、cookies、`../`、Windows/POSIX 绝对路径、反斜杠逃逸、嵌套 path 参数; policy evidence/recommendation 明确 parent traversal 与 symlink-resolved escape 风险。
 - 2026-07-08: M3.2 已完成。Shell 策略新增 13 条危险命令回归 case, 覆盖删除、格式化、权限破坏、`curl/wget | sh/bash`、PowerShell `iwr/Invoke-WebRequest | iex/Invoke-Expression` 和 encoded command; `shell/run_command/exec/execute/bash/powershell/pwsh` 默认 deny, 显式 allow 下 `pwd/ls/Get-Location` 可通过。
+- 2026-07-08: M3.3 已完成。网络外发策略新增 allowlist、内网/localhost/metadata deny 和跨工具外发标记测试; 外部 URL 默认 confirm, `network.allowed_domains` 命中时 allow, private/loopback/link-local/metadata host 输出 `internal_network_egress` 并 deny。
 
 ## 里程碑总览
 
@@ -176,10 +177,10 @@ M0 骨架已完成:
 
 ### M3.3 网络外发策略
 
-- [ ] 对 POST、upload、webhook、send request 默认 confirm。
-- [ ] 支持域名 allowlist。
-- [ ] 支持阻断内网地址、metadata IP 和 localhost 外发。
-- [ ] 支持跨工具数据外发风险标记。
+- [x] 对 POST、upload、webhook、send request 默认 confirm。
+- [x] 支持域名 allowlist。
+- [x] 支持阻断内网地址、metadata IP 和 localhost 外发。
+- [x] 支持跨工具数据外发风险标记。
 
 验收标准:
 
@@ -399,10 +400,10 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 建议下一轮从 M3 开始, 按以下顺序做:
 
-1. M3.3: 加强网络外发策略。
-2. M3.4: 增加脱敏策略。
-3. M4.1: 落地 Runtime Gateway API 契约。
-4. M4.2: Tool Adapter 抽象。
-5. M4.3: Trace Recorder 完善。
+1. M3.4: 增加脱敏策略。
+2. M4.1: 落地 Runtime Gateway API 契约。
+3. M4.2: Tool Adapter 抽象。
+4. M4.3: Trace Recorder 完善。
+5. M5.1: 扩展 JSONL case。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

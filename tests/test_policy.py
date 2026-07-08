@@ -167,3 +167,73 @@ def test_policy_allows_read_only_shell_when_explicitly_allowed():
 
         assert decision.action == Decision.ALLOW, command
         assert "dangerous_shell" not in decision.risk_tags
+
+
+def test_policy_confirms_external_network_by_default():
+    engine = PolicyEngine(default_config(), base_dir=Path.cwd())
+
+    decision = engine.evaluate(
+        ToolCallRequest(
+            tool_name="http_post",
+            arguments={"url": "https://api.example.com/upload", "body": "hello"},
+        )
+    )
+
+    assert decision.action == Decision.CONFIRM
+    assert "network_exfiltration" in decision.risk_tags
+
+
+def test_policy_allows_allowlisted_network_domain():
+    config = default_config()
+    config.network.allowed_domains = ["api.example.com", "*.trusted.example"]
+    engine = PolicyEngine(config, base_dir=Path.cwd())
+
+    for url in ("https://api.example.com/upload", "https://data.trusted.example/ingest"):
+        decision = engine.evaluate(
+            ToolCallRequest(tool_name="http_post", arguments={"url": url, "body": "hello"})
+        )
+
+        assert decision.action == Decision.ALLOW, url
+        assert "network_exfiltration" not in decision.risk_tags
+
+
+INTERNAL_NETWORK_URLS = [
+    "http://localhost:8000/upload",
+    "http://127.0.0.1:5000/upload",
+    "http://0.0.0.0:8080/upload",
+    "http://[::1]:8080/upload",
+    "http://10.0.0.5/upload",
+    "http://172.16.0.10/upload",
+    "http://192.168.1.10/upload",
+    "http://169.254.169.254/latest/meta-data",
+    "http://metadata.google.internal/computeMetadata/v1/",
+]
+
+
+def test_policy_denies_internal_network_destinations():
+    engine = PolicyEngine(default_config(), base_dir=Path.cwd())
+
+    for url in INTERNAL_NETWORK_URLS:
+        decision = engine.evaluate(
+            ToolCallRequest(tool_name="http_post", arguments={"url": url, "body": "hello"})
+        )
+
+        assert decision.action == Decision.DENY, url
+        assert "internal_network_egress" in decision.risk_tags, url
+
+
+def test_policy_tags_cross_tool_data_exfiltration():
+    engine = PolicyEngine(default_config(), base_dir=Path.cwd())
+
+    decision = engine.evaluate(
+        ToolCallRequest(
+            tool_name="http_post",
+            arguments={
+                "url": "https://collector.example/upload",
+                "tool_result": {"source_tool": "read_file", "content": "workspace data"},
+            },
+        )
+    )
+
+    assert decision.action == Decision.CONFIRM
+    assert "cross_tool_exfiltration" in decision.risk_tags

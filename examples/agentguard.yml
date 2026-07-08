@@ -9,7 +9,12 @@ filesystem:
     - "id_rsa"
     - "id_ed25519"
     - "*.pem"
+    - "cookies*"
     - "cookies.sqlite"
+
+network:
+  allowed_domains:
+    - api.example.com
 
 tools:
   shell:
@@ -32,4 +37,3 @@ redaction:
     - token
     - password
     - secret
-

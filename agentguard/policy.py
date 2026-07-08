@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import fnmatch
+import ipaddress
 import os
 import re
 import time
 from collections.abc import Iterable
 from pathlib import Path, PureWindowsPath
 from typing import Any
+from urllib.parse import urlparse
 
 from agentguard.config import AgentGuardConfig, default_config
 from agentguard.metadata import DANGEROUS_COMMAND_PATTERNS, risk
@@ -17,6 +19,14 @@ PATH_ARGUMENT_NAMES = {"file", "file_path", "filepath", "filename"}
 NETWORK_TOOLS = {"http_post", "post_url", "webhook", "upload", "send_request"}
 SHELL_TOOLS = {"shell", "run_command", "exec", "execute", "bash", "powershell", "pwsh", "cmd"}
 WRITE_TOOLS = {"write_file", "delete_file", "remove_file", "replace_file"}
+URL_PATTERN = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
+METADATA_HOSTS = {"metadata.google.internal", "169.254.169.254"}
+CROSS_TOOL_PAYLOAD_KEYS = {
+    "previoustoolresult",
+    "sourcetool",
+    "toolresult",
+    "toolresults",
+}
 
 
 class PolicyEngine:
@@ -39,6 +49,8 @@ class PolicyEngine:
             action = Decision.DENY
         elif any(item.category == "network_exfiltration" for item in risks):
             action = Decision.CONFIRM
+        elif action == Decision.CONFIRM and self._is_allowlisted_network_request(request):
+            action = Decision.ALLOW
         elif action == Decision.ALLOW and redacted_arguments != request.arguments:
             action = Decision.REDACT
 
@@ -115,17 +127,43 @@ class PolicyEngine:
         return risks
 
     def _network_risks(self, request: ToolCallRequest) -> list[RiskRecord]:
-        text = f"{request.tool_name} {request.arguments}".lower()
-        if request.tool_name not in NETWORK_TOOLS and not re.search(r"https?://", text):
+        urls = self._extract_urls(request.arguments)
+        if request.tool_name not in NETWORK_TOOLS and not urls:
             return []
-        return [
+
+        risks: list[RiskRecord] = []
+        internal_urls = [url for url in urls if self._is_internal_url(url)]
+        if internal_urls:
+            risks.append(
+                risk(
+                    "internal_network_egress",
+                    Severity.HIGH,
+                    f"Tool call targets internal or metadata URL(s): {', '.join(internal_urls)}",
+                    "Deny outbound requests to localhost, private networks, and metadata hosts.",
+                )
+            )
+
+        if self._is_allowlisted_url_set(urls) and not internal_urls:
+            return risks
+
+        risks.append(
             risk(
                 "network_exfiltration",
                 Severity.MEDIUM,
                 "Tool call includes network egress or URL-like arguments.",
                 "Require confirmation or use an allowlist for outbound domains.",
             )
-        ]
+        )
+        if urls and self._has_cross_tool_payload(request.arguments):
+            risks.append(
+                risk(
+                    "cross_tool_exfiltration",
+                    Severity.MEDIUM,
+                    "Tool call forwards prior tool output to a network destination.",
+                    "Require explicit confirmation before sending cross-tool data externally.",
+                )
+            )
+        return risks
 
     def _redact_arguments(self, arguments: dict[str, Any]) -> dict[str, Any]:
         if not self.config.redaction.enabled:
@@ -213,6 +251,77 @@ class PolicyEngine:
         if not windows_path.drive:
             return False
         return os.name != "nt" or not Path(path_value).is_absolute()
+
+    def _is_allowlisted_network_request(self, request: ToolCallRequest) -> bool:
+        urls = self._extract_urls(request.arguments)
+        return request.tool_name in NETWORK_TOOLS and self._is_allowlisted_url_set(urls)
+
+    def _is_allowlisted_url_set(self, urls: list[str]) -> bool:
+        return bool(urls) and all(self._is_allowlisted_url(url) for url in urls)
+
+    def _is_allowlisted_url(self, url: str) -> bool:
+        host = urlparse(url).hostname
+        if not host:
+            return False
+        normalized_host = host.lower()
+        for allowed_domain in self.config.network.allowed_domains:
+            pattern = allowed_domain.lower()
+            if pattern.startswith("*."):
+                suffix = pattern[1:]
+                if normalized_host.endswith(suffix) and normalized_host != pattern[2:]:
+                    return True
+            elif normalized_host == pattern:
+                return True
+        return False
+
+    @staticmethod
+    def _extract_urls(value: Any) -> list[str]:
+        urls: list[str] = []
+        if isinstance(value, str):
+            urls.extend(match.group(0).rstrip(".,);]") for match in URL_PATTERN.finditer(value))
+        elif isinstance(value, dict):
+            for child in value.values():
+                urls.extend(PolicyEngine._extract_urls(child))
+        elif isinstance(value, list):
+            for child in value:
+                urls.extend(PolicyEngine._extract_urls(child))
+        return urls
+
+    @staticmethod
+    def _is_internal_url(url: str) -> bool:
+        host = urlparse(url).hostname
+        if not host:
+            return False
+        normalized_host = host.lower()
+        if (
+            normalized_host == "localhost"
+            or normalized_host.endswith(".localhost")
+            or normalized_host in METADATA_HOSTS
+        ):
+            return True
+        try:
+            address = ipaddress.ip_address(normalized_host)
+        except ValueError:
+            return False
+        return (
+            address.is_loopback
+            or address.is_private
+            or address.is_link_local
+            or address.is_unspecified
+        )
+
+    @staticmethod
+    def _has_cross_tool_payload(value: Any) -> bool:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                normalized_key = re.sub(r"[^a-z0-9]", "", str(key).lower())
+                if normalized_key in CROSS_TOOL_PAYLOAD_KEYS:
+                    return True
+                if PolicyEngine._has_cross_tool_payload(child):
+                    return True
+        elif isinstance(value, list):
+            return any(PolicyEngine._has_cross_tool_payload(child) for child in value)
+        return False
 
     @staticmethod
     def _reason(action: Decision, risk_tags: list[str], elapsed_ms: float) -> str:

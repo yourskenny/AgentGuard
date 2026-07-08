@@ -33,9 +33,14 @@ class RedactionPolicy(BaseModel):
     patterns: list[str] = Field(default_factory=lambda: ["api_key", "token", "password", "secret"])
 
 
+class NetworkPolicy(BaseModel):
+    allowed_domains: list[str] = Field(default_factory=list)
+
+
 class AgentGuardConfig(BaseModel):
     default_action: Decision = Decision.CONFIRM
     filesystem: FilesystemPolicy = Field(default_factory=FilesystemPolicy)
+    network: NetworkPolicy = Field(default_factory=NetworkPolicy)
     tools: dict[str, ToolPolicy] = Field(default_factory=dict)
     redaction: RedactionPolicy = Field(default_factory=RedactionPolicy)
 
