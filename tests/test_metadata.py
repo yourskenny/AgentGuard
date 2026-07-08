@@ -119,3 +119,108 @@ def test_analyze_tool_does_not_flag_safe_operational_description():
     )
 
     assert "tool_description_injection" not in result.risk_tags
+
+
+SCHEMA_RISK_CASES = [
+    ("command_property", {"type": "object", "properties": {"command": {"type": "string"}}}),
+    ("cmd_property", {"type": "object", "properties": {"cmd": {"type": "string"}}}),
+    (
+        "nested_command_property",
+        {
+            "type": "object",
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "properties": {"cmd": {"type": "string"}},
+                    "required": ["cmd"],
+                    "additionalProperties": False,
+                }
+            },
+            "required": ["options"],
+            "additionalProperties": False,
+        },
+    ),
+    ("path_property", {"type": "object", "properties": {"path": {"type": "string"}}}),
+    ("file_property", {"type": "object", "properties": {"file": {"type": "string"}}}),
+    ("filename_property", {"type": "object", "properties": {"filename": {"type": "string"}}}),
+    ("url_property", {"type": "object", "properties": {"url": {"type": "string"}}}),
+    ("endpoint_property", {"type": "object", "properties": {"endpoint": {"type": "string"}}}),
+    ("webhook_property", {"type": "object", "properties": {"webhook": {"type": "string"}}}),
+    ("untyped_top_level_object", {"type": "object"}),
+    (
+        "untyped_nested_object",
+        {"type": "object", "properties": {"payload": {"type": "object"}}},
+    ),
+    (
+        "additional_properties_true",
+        {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "required": ["name"],
+            "additionalProperties": True,
+        },
+    ),
+    ("additional_properties_empty_schema", {"type": "object", "additionalProperties": {}}),
+    (
+        "additional_properties_object_schema",
+        {"type": "object", "additionalProperties": {"type": "object"}},
+    ),
+    ("missing_required", {"type": "object", "properties": {"query": {"type": "string"}}}),
+    (
+        "empty_required",
+        {"type": "object", "properties": {"query": {"type": "string"}}, "required": []},
+    ),
+]
+
+
+@pytest.mark.parametrize(("case_name", "schema"), SCHEMA_RISK_CASES)
+def test_analyze_tool_detects_schema_ambiguity_risks(case_name, schema):
+    result = analyze_tool("schema", case_name, "Run the tool with provided input.", schema)
+    risks = [risk for risk in result.risks if risk.category == "schema_ambiguity"]
+
+    assert "schema_ambiguity" in result.risk_tags
+    assert risks
+    assert all(risk.severity in {"medium", "high"} for risk in risks)
+    assert all(risk.evidence for risk in risks)
+    assert all(risk.recommendation for risk in risks)
+    assert 0 <= result.risk_score <= 1
+
+
+def test_analyze_tool_schema_score_accumulates_explainable_risks():
+    result = analyze_tool(
+        "schema",
+        "dangerous_runner",
+        "Run a flexible operation.",
+        {
+            "type": "object",
+            "properties": {
+                "command": {"type": "string"},
+                "path": {"type": "string"},
+                "payload": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+    )
+    schema_risks = [risk for risk in result.risks if risk.category == "schema_ambiguity"]
+
+    assert len(schema_risks) >= 3
+    assert result.risk_score >= 0.5
+
+
+def test_analyze_tool_does_not_flag_strict_safe_schema_as_ambiguous():
+    result = analyze_tool(
+        "schema",
+        "search_notes",
+        "Search notes by query.",
+        {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "maxLength": 200},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    )
+
+    assert "schema_ambiguity" not in result.risk_tags

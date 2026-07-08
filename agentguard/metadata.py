@@ -57,6 +57,8 @@ CREDENTIAL_SCHEMA_KEYS = {
     "password",
     "api_key",
 }
+SCHEMA_FILESYSTEM_KEYS = {"path", "file", "filename", "filepath"}
+SCHEMA_NETWORK_EGRESS_KEYS = {"url", "endpoint", "webhook", "uri"}
 
 
 def risk(
@@ -87,6 +89,69 @@ def flatten_schema_keys(schema: dict[str, Any]) -> set[str]:
 
     visit(schema)
     return keys
+
+
+def iter_schema_objects(schema: dict[str, Any]) -> Iterable[tuple[str, dict[str, Any]]]:
+    def visit(value: Any, path: str) -> Iterable[tuple[str, dict[str, Any]]]:
+        if not isinstance(value, dict):
+            return
+
+        if (
+            value.get("type") == "object"
+            or "properties" in value
+            or "additionalProperties" in value
+        ):
+            yield path, value
+
+        properties = value.get("properties")
+        if isinstance(properties, dict):
+            for property_name, child in properties.items():
+                yield from visit(child, f"{path}.{property_name}")
+
+        items = value.get("items")
+        if isinstance(items, dict):
+            yield from visit(items, f"{path}[]")
+
+        additional_properties = value.get("additionalProperties")
+        if isinstance(additional_properties, dict):
+            yield from visit(additional_properties, f"{path}.*")
+
+    yield from visit(schema, "$")
+
+
+def _schema_key_evidence(schema_keys: set[str], candidates: set[str]) -> str:
+    return ", ".join(sorted(schema_keys & candidates))
+
+
+def _has_untyped_object(node: dict[str, Any]) -> bool:
+    return (
+        node.get("type") == "object"
+        and not isinstance(node.get("properties"), dict)
+        and "additionalProperties" not in node
+    )
+
+
+def _has_broad_additional_properties(node: dict[str, Any]) -> bool:
+    additional_properties = node.get("additionalProperties")
+    if additional_properties is True:
+        return True
+    if not isinstance(additional_properties, dict):
+        return False
+    if not additional_properties:
+        return True
+    return (
+        additional_properties.get("type") == "object"
+        and "properties" not in additional_properties
+        and additional_properties.get("additionalProperties") is not False
+    )
+
+
+def _has_missing_required(node: dict[str, Any]) -> bool:
+    properties = node.get("properties")
+    if not isinstance(properties, dict) or not properties:
+        return False
+    required = node.get("required")
+    return not isinstance(required, list) or not required
 
 
 def infer_capabilities(tool_name: str, description: str, schema: dict[str, Any]) -> list[str]:
@@ -170,29 +235,85 @@ def analyze_tool(
             break
 
     schema_keys = flatten_schema_keys(schema)
-    if schema_keys & {"command", "cmd"}:
+
+    def add_schema_ambiguity(
+        severity: Severity,
+        evidence: str,
+        recommendation: str,
+        score_delta: float,
+    ) -> None:
+        nonlocal score
         tags.add("schema_ambiguity")
-        score += 0.2
+        score += score_delta
         risks.append(
             risk(
                 "schema_ambiguity",
-                Severity.MEDIUM,
-                "Input schema exposes a command-like parameter.",
-                "Constrain command parameters or route them through a deny-by-default policy.",
+                severity,
+                evidence,
+                recommendation,
             )
         )
 
-    if schema_keys & {"url", "endpoint", "webhook"}:
+    command_keys = _schema_key_evidence(schema_keys, SHELL_SCHEMA_KEYS)
+    if command_keys:
+        add_schema_ambiguity(
+            Severity.HIGH,
+            f"Input schema exposes command-like parameter(s): {command_keys}.",
+            "Constrain command parameters or route them through a deny-by-default policy.",
+            0.25,
+        )
+
+    filesystem_keys = _schema_key_evidence(schema_keys, SCHEMA_FILESYSTEM_KEYS)
+    if filesystem_keys:
+        add_schema_ambiguity(
+            Severity.HIGH,
+            f"Input schema exposes filesystem path parameter(s): {filesystem_keys}.",
+            "Validate paths against allowed roots before filesystem access.",
+            0.2,
+        )
+
+    network_keys = _schema_key_evidence(schema_keys, SCHEMA_NETWORK_EGRESS_KEYS)
+    if network_keys:
+        add_schema_ambiguity(
+            Severity.MEDIUM,
+            f"Input schema exposes network destination parameter(s): {network_keys}.",
+            "Require confirmation or an allowlist before network egress.",
+            0.2,
+        )
+
         tags.add("network_exfiltration")
-        score += 0.2
+        score += 0.1
         risks.append(
             risk(
                 "network_exfiltration",
                 Severity.MEDIUM,
-                "Input schema exposes a URL-like parameter.",
+                f"Input schema exposes URL-like parameter(s): {network_keys}.",
                 "Require confirmation or an allowlist before network egress.",
             )
         )
+
+    for object_path, object_schema in iter_schema_objects(schema):
+        if _has_untyped_object(object_schema):
+            add_schema_ambiguity(
+                Severity.MEDIUM,
+                f"Input schema has an unconstrained object at {object_path}.",
+                "Define explicit object properties or set additionalProperties to false.",
+                0.15,
+            )
+        if _has_broad_additional_properties(object_schema):
+            add_schema_ambiguity(
+                Severity.MEDIUM,
+                f"Input schema allows broad additionalProperties at {object_path}.",
+                "Constrain additionalProperties with a narrow schema or disable it.",
+                0.15,
+            )
+        if _has_missing_required(object_schema):
+            add_schema_ambiguity(
+                Severity.MEDIUM,
+                f"Input schema object at {object_path} has properties but no required fields.",
+                "Declare required fields for security-relevant tool parameters.",
+                0.1,
+            )
 
     if "filesystem_write" in infer_capabilities(tool_name, description, schema):
         tags.add("destructive_write")

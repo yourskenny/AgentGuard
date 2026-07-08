@@ -29,6 +29,7 @@ M0 骨架已完成:
 - 2026-07-08: M1.3 已完成。scan Markdown 报告新增 Risk Distribution; JSON 报告保留结构化 risks; SARIF 报告测试覆盖 rules/results; CLI `scan --output` 写文件路径已验证。
 - 2026-07-08: M2.1 已完成。`infer_capabilities` 现在覆盖 filesystem read/write、shell execution、network egress、database access、browser automation、credential/env access; 每类至少 2 条测试, 并验证一个工具可同时拥有多个 capability。
 - 2026-07-08: M2.2 已完成。新增 20 条 tool poisoning 描述注入回归样例, 覆盖忽略/覆盖指令、读取凭据、外发敏感内容、隐藏/系统/developer prompt、绕过策略; `tool_description_injection` 命中项保留匹配片段 evidence 和 recommendation, 并验证安全描述不误报。
+- 2026-07-08: M2.3 已完成。新增 16 条 schema 风险回归 case 和分数/负例测试, 覆盖 `command/cmd`、`path/file/filename`、`url/endpoint/webhook`、无类型 object、宽 `additionalProperties`、缺失 `required`; schema ambiguity 风险输出中高等级、结构化 evidence 和可解释分数。
 
 ## 里程碑总览
 
@@ -36,7 +37,7 @@ M0 骨架已完成:
 |---|---|---|---|
 | M0 | 可运行骨架 | CLI/API/模型/测试/基础 docs | 已完成 |
 | M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 已完成 |
-| M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 进行中 |
+| M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 已完成 |
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 待做 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 待做 |
 | M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
@@ -128,11 +129,11 @@ M0 骨架已完成:
 
 ### M2.3 Schema 风险检测
 
-- [ ] 检测任意 `command` / `cmd` 参数。
-- [ ] 检测任意 `path` / `file` 参数。
-- [ ] 检测任意 `url` / `endpoint` / `webhook` 参数。
-- [ ] 检测无类型 object、additionalProperties 过宽、缺失 required。
-- [ ] 给 schema ambiguity 赋中风险或高风险等级。
+- [x] 检测任意 `command` / `cmd` 参数。
+- [x] 检测任意 `path` / `file` 参数。
+- [x] 检测任意 `url` / `endpoint` / `webhook` 参数。
+- [x] 检测无类型 object、additionalProperties 过宽、缺失 required。
+- [x] 给 schema ambiguity 赋中风险或高风险等级。
 
 验收标准:
 
@@ -394,12 +395,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 M1 开始, 按以下顺序做:
+建议下一轮从 M3 开始, 按以下顺序做:
 
-1. M1.1: 补齐 MCP config fixture 和解析错误处理。
-2. M1.2: 增加 server 风险规则与测试。
-3. M1.3: 固化 scan 报告格式。
-4. M2.1: 扩展 tool capability 分类。
-5. M3.1: 加强文件系统策略。
+1. M3.1: 加强文件系统策略。
+2. M3.2: 加强 Shell 策略。
+3. M3.3: 加强网络外发策略。
+4. M3.4: 增加脱敏策略。
+5. M4.1: 落地 Runtime Gateway API 契约。
 
-这 5 个切片完成后, 项目就能从“骨架可跑”进入“扫描结果可信”的状态。
+这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。
