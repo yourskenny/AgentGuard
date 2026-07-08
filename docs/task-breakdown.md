@@ -44,6 +44,7 @@ M0 骨架已完成:
 - 2026-07-08: M6.2 已完成。新增面试讲解文档, 覆盖一句话定位、30 秒版本、2 分钟版本、5 分钟架构展开和常见追问; README 文档索引已链接该材料。
 - 2026-07-08: M6.3 已完成。新增简历 bullet 文档, 提供稳健版 4 条和 Agent 工程基础设施版 4 条, 并列出当前证据边界与不得夸大的未实现能力。
 - 2026-07-08: M6.4 已完成。新增项目复盘与面试问答文档, 串联里程碑回顾、工程取舍、证据索引、演示命令和高频追问; README 文档索引已链接该材料。
+- 2026-07-08: 发布前 GitHub 同步已完成。确认 `yourskenny/AgentGuard` 为公开仓库, 默认分支为 `main`; 本地验证通过后将当前 HEAD 推送到 `origin/main`, 并用远端 SHA 等于本地 HEAD 作为同步验收。
 
 ## 里程碑总览
 
@@ -363,6 +364,23 @@ M0 骨架已完成:
 - 面试回答能落回仓库事实, 不依赖口头包装。
 - README 中有稳定入口。
 
+## 发布前 GitHub 同步和远端验证
+
+- [x] 确认 GitHub CLI 可用且已登录。
+- [x] 确认远端仓库 `yourskenny/AgentGuard` 可访问且为 PUBLIC。
+- [x] 确认远端默认分支为 `main`。
+- [x] 确认当前实现分支可 fast-forward 到 `main`。
+- [x] 在推送前运行 `pytest` 和 `ruff check .`。
+- [x] 将当前 HEAD 推送到 `origin/main`。
+- [x] 用 `git ls-remote origin main` 验证远端 main SHA 等于本地 HEAD。
+
+验收标准:
+
+- 公开 GitHub 仓库可访问。
+- 远端默认分支包含最新 README、docs、代码、测试和报告样例。
+- 本地 `git status -sb` 干净。
+- 本地 HEAD 与远端 `origin/main` 的 SHA 一致。
+
 ## 依赖关系
 
 ```text
@@ -422,12 +440,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从发布前 GitHub 同步开始, 按以下顺序做:
+建议下一轮从后续 MCP adapter 对接设计开始, 按以下顺序做:
 
-1. 发布前 GitHub 同步和远端验证。
-2. 后续 MCP adapter 对接设计。
-3. 真实 MCP adapter 对接 spike。
-4. GitHub issues/roadmap 整理。
-5. CI 与发布徽章整理。
+1. 后续 MCP adapter 对接设计。
+2. 真实 MCP adapter 对接 spike。
+3. GitHub issues/roadmap 整理。
+4. CI 与发布徽章整理。
+5. 最小端到端 demo 脚本。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。
