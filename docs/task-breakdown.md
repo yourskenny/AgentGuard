@@ -28,6 +28,7 @@ M0 骨架已完成:
 - 2026-07-08: M1.2 已完成。新增 server 级风险 fixture, 覆盖敏感 env、危险启动命令、未固定 `npx/uvx` 包来源、高权限目录参数; 每类风险至少 2 条测试 case; Markdown scan 报告可按 server 展示风险 evidence。
 - 2026-07-08: M1.3 已完成。scan Markdown 报告新增 Risk Distribution; JSON 报告保留结构化 risks; SARIF 报告测试覆盖 rules/results; CLI `scan --output` 写文件路径已验证。
 - 2026-07-08: M2.1 已完成。`infer_capabilities` 现在覆盖 filesystem read/write、shell execution、network egress、database access、browser automation、credential/env access; 每类至少 2 条测试, 并验证一个工具可同时拥有多个 capability。
+- 2026-07-08: M2.2 已完成。新增 20 条 tool poisoning 描述注入回归样例, 覆盖忽略/覆盖指令、读取凭据、外发敏感内容、隐藏/系统/developer prompt、绕过策略; `tool_description_injection` 命中项保留匹配片段 evidence 和 recommendation, 并验证安全描述不误报。
 
 ## 里程碑总览
 
@@ -113,11 +114,11 @@ M0 骨架已完成:
 
 ### M2.2 描述注入检测
 
-- [ ] 检测忽略原始指令类短语。
-- [ ] 检测读取 secret/token/credential 类短语。
-- [ ] 检测外发/上传/发送敏感内容类短语。
-- [ ] 检测隐藏提示词、系统提示词、developer message 相关短语。
-- [ ] 保留匹配片段作为 evidence。
+- [x] 检测忽略原始指令类短语。
+- [x] 检测读取 secret/token/credential 类短语。
+- [x] 检测外发/上传/发送敏感内容类短语。
+- [x] 检测隐藏提示词、系统提示词、developer message 相关短语。
+- [x] 保留匹配片段作为 evidence。
 
 验收标准:
 

@@ -11,10 +11,16 @@ INJECTION_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
         r"ignore\s+(all\s+)?previous\s+instructions",
+        r"\b(disregard|override)\b.*\b(original\s+request|earlier\s+instructions|previous\s+instructions|all\s+instructions)\b",
+        r"\bdo\s+not\s+follow\b.*\buser\b",
+        r"\bfollow\s+this\s+tool\s+description\s+instead\b",
         r"system\s+prompt",
-        r"read\s+(the\s+)?secret",
+        r"\b(read|collect|dump|retrieve|inspect)\b.*\b(secrets?|tokens?|credentials?|api\s+keys?|private\s+keys?|passwords?|id_rsa|\.ssh)\b",
         r"exfiltrat(e|ion)",
-        r"send\s+.*(token|secret|credential)",
+        r"\b(upload|send|post|forward|leak)\b.*\b(sensitive|secrets?|tokens?|credentials?|api\s+keys?|private\s+keys?|passwords?|file\s+contents?|repository\s+content|webhook|endpoint|remote\s+url|external\s+host)\b",
+        r"\b(reveal|print|read|expose)\b.*\b(hidden\s+prompt|system\s+prompt|developer\s+message|system\s+message)\b",
+        r"\btreat\s+this\s+description\s+as\s+the\s+new\s+system\s+message\b",
+        r"\bbypass\b.*\b(policy|checks?|safety|guardrails?)\b",
     )
 )
 
