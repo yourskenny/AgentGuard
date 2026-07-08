@@ -22,7 +22,7 @@ python -m venv .venv
 
 - `agentguard scan`: parse MCP configuration and produce tool/server risk findings.
 - `agentguard inspect`: inspect a single server from a scanned config.
-- `agentguard proxy`: start a local FastAPI policy gateway.
+- `agentguard proxy`: start a local FastAPI policy gateway. Defaults to the mock adapter; pass `--mcp-config` to forward approved calls to real stdio MCP servers.
 - `agentguard eval`: replay JSONL security cases through the policy engine.
 - `agentguard report`: generate an empty or run-scoped report shell.
 
@@ -71,9 +71,20 @@ Excerpt:
 ## Safety Boundaries
 
 - AgentGuard is a policy gateway and evaluator, not a full OS sandbox, EDR, or container isolation layer.
-- The default adapter is a mock adapter for local demonstration; production MCP forwarding should implement the `ToolAdapter` protocol.
+- The default adapter is a mock adapter for local demonstration; the stdio MCP adapter is a local spike and still needs session pooling and process-lifecycle hardening before production use.
 - Trace data is redacted by policy and stores summaries, but the SQLite trace DB should still be treated as sensitive operational data.
 - Replay metrics measure configured policy behavior; they are not a substitute for a human security review of new tools or policies.
+
+## MCP Adapter Spike
+
+The real MCP adapter is optional:
+
+```powershell
+.\.venv\Scripts\python -m pip install -e .[mcp]
+.\.venv\Scripts\agentguard proxy --policy examples/agentguard.yml --mcp-config examples/mcp.sample.json
+```
+
+The adapter currently targets stdio MCP servers through the MCP Python SDK v1.x and keeps the gateway-facing `ToolAdapter.execute()` boundary stable.
 
 ## Docs
 

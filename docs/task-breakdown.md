@@ -46,6 +46,7 @@ M0 骨架已完成:
 - 2026-07-08: M6.4 已完成。新增项目复盘与面试问答文档, 串联里程碑回顾、工程取舍、证据索引、演示命令和高频追问; README 文档索引已链接该材料。
 - 2026-07-08: 发布前 GitHub 同步已完成。确认 `yourskenny/AgentGuard` 为公开仓库, 默认分支为 `main`; 本地验证通过后将当前 HEAD 推送到 `origin/main`, 并用远端 SHA 等于本地 HEAD 作为同步验收。
 - 2026-07-08: 后续 MCP adapter 对接设计已完成。新增 `docs/mcp-adapter-design.md`, 比较三种接口形态并选择保留现有窄 `ToolAdapter.execute()` port、在具体 `MCPToolAdapter` 内部隐藏 registry/session/result/error 复杂度的方案。
+- 2026-07-08: 真实 MCP adapter 对接 spike 已完成。新增可选 `agentguard[mcp]` 依赖、`MCPToolAdapter`、CLI `proxy --mcp-config`、safe stdio MCP server fixture 和 gateway 集成测试; 当前全量验证为 102 passed、1 个上游 TestClient deprecation warning。
 
 ## 里程碑总览
 
@@ -396,6 +397,24 @@ M0 骨架已完成:
 - 能指导下一步真实 MCP adapter spike。
 - 错误映射、结果归一化和生命周期边界清晰。
 
+## 真实 MCP adapter 对接 spike
+
+- [x] 将 MCP Python SDK v1.x 加入可选 `agentguard[mcp]` 依赖和 dev extra。
+- [x] 新增 `MCPToolAdapter.from_config(...)`, 从原始 MCP config 读取启动命令、参数和 env 值。
+- [x] 通过 SDK `stdio_client` 和 `ClientSession.call_tool(...)` 调用 stdio MCP server。
+- [x] 将 MCP result 归一化为 JSON-serializable gateway result。
+- [x] 将缺失 server、缺失 serverName、SDK 调用失败、超时、非法 result 映射为稳定 `ToolAdapterError` code。
+- [x] 新增 `examples/safe_mcp_server/server.py` 作为本地安全 MCP fixture。
+- [x] 新增 gateway 集成测试, 证明 `/v1/tool-calls` 可通过真实 adapter 读取 `README.md`。
+- [x] CLI `proxy` 支持 `--mcp-config` 启用真实 adapter, 不传则继续使用 mock adapter。
+
+验收标准:
+
+- 默认 mock adapter 行为不变。
+- 真实 adapter 不绕过 policy: deny/confirm 仍不会执行 adapter。
+- 真实 adapter 的成功和失败路径都有测试覆盖。
+- pytest 和 ruff 通过。
+
 ## 依赖关系
 
 ```text
@@ -455,12 +474,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从真实 MCP adapter 对接 spike 开始, 按以下顺序做:
+建议下一轮从 GitHub issues/roadmap 整理开始, 按以下顺序做:
 
-1. 真实 MCP adapter 对接 spike。
-2. GitHub issues/roadmap 整理。
-3. CI 与发布徽章整理。
-4. 最小端到端 demo 脚本。
-5. 发布说明和示例录屏脚本。
+1. GitHub issues/roadmap 整理。
+2. CI 与发布徽章整理。
+3. 最小端到端 demo 脚本。
+4. 发布说明和示例录屏脚本。
+5. MCP adapter 连接池与进程生命周期硬化。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

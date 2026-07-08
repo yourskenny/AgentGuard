@@ -56,6 +56,10 @@ def proxy(
         Path | None,
         typer.Option("--policy", "-p", exists=True, help="AgentGuard policy YAML."),
     ] = None,
+    mcp_config: Annotated[
+        Path | None,
+        typer.Option("--mcp-config", exists=True, help="MCP config for real tool forwarding."),
+    ] = None,
     listen: Annotated[str, typer.Option("--listen", help="Host:port to bind.")] = "127.0.0.1:8787",
     trace_db: Annotated[
         Path,
@@ -65,10 +69,16 @@ def proxy(
     """Start the local runtime gateway."""
     import uvicorn
 
+    from agentguard.adapters import MCPToolAdapter
     from agentguard.gateway import create_app
 
     host, port = _parse_listen(listen)
-    uvicorn.run(create_app(policy_path=policy, trace_db=trace_db), host=host, port=port)
+    adapter = MCPToolAdapter.from_config(mcp_config) if mcp_config else None
+    uvicorn.run(
+        create_app(policy_path=policy, trace_db=trace_db, tool_adapter=adapter),
+        host=host,
+        port=port,
+    )
 
 
 @app.command("eval")

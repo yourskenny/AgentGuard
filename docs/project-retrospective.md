@@ -33,7 +33,7 @@ The project is intentionally not a general agent framework. It does not plan tas
 Current regression evidence:
 
 - 85 replay cases across 7 safety categories.
-- 99 pytest cases passing in the current local environment.
+- 102 pytest cases passing in the current local environment.
 - Markdown, JSON, and SARIF sample evaluation reports.
 - Gateway tests covering allow, deny, confirm, adapter error, trace order, and redaction behavior.
 
@@ -137,4 +137,3 @@ The next practical step is a real MCP adapter spike behind the existing `ToolAda
 ### What should not be claimed yet?
 
 Do not claim production deployment, real MCP forwarding, OS-level sandboxing, enterprise traffic, hosted dashboard, or LLM-judge evaluation. The current project is a local-first security gateway and replay evaluator with a mock adapter.
-

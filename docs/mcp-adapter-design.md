@@ -219,9 +219,20 @@ Returned result shape:
 
 - `MockToolAdapter` behavior remains unchanged.
 - Gateway tests still prove deny/confirm never call the adapter.
-- `MCPToolAdapter` can be constructed from scanned MCP config.
+- `MCPToolAdapter` can be constructed from an MCP config file.
 - Missing server/tool maps to stable `ToolAdapterError` codes.
 - A safe local MCP server can be called through `/v1/tool-calls`.
 - Adapter errors are recorded as `tool_error` trace events.
 - Original secret values do not appear in adapter result traces.
 
+## Spike Status
+
+The first real adapter spike is implemented:
+
+- `MCPToolAdapter` loads raw MCP config with launch env values kept out of scan results.
+- Approved gateway calls can reach a local stdio MCP server through MCP Python SDK v1.x.
+- `agentguard proxy --mcp-config <path>` wires the real adapter into the FastAPI gateway.
+- `examples/safe_mcp_server/server.py` provides a safe local fixture for read-only demo calls.
+- `tests/test_mcp_adapter.py` verifies missing server handling and a gateway call through the safe MCP server.
+
+The current spike starts a stdio session per call. A later hardening slice should add pooled sessions, startup health checks, stricter result-size limits, and cross-platform process cleanup.
