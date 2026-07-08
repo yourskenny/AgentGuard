@@ -35,6 +35,22 @@ SENSITIVE_ENV_PATTERN = re.compile(
 SENSITIVE_SCHEMA_FIELDS = {"path", "file", "filename", "command", "cmd", "url", "endpoint"}
 PACKAGE_RUNNERS = {"npx", "uvx"}
 WINDOWS_DRIVE_ROOT_PATTERN = re.compile(r"^[a-zA-Z]:[\\/]*$")
+FILESYSTEM_READ_SCHEMA_KEYS = {"path", "file", "filename", "filepath"}
+SHELL_SCHEMA_KEYS = {"command", "cmd"}
+NETWORK_SCHEMA_KEYS = {"url", "endpoint", "webhook", "uri"}
+DATABASE_SCHEMA_KEYS = {"database", "table", "sql", "query", "collection", "connection_string"}
+BROWSER_SCHEMA_KEYS = {"selector", "page", "browser", "tab"}
+CREDENTIAL_SCHEMA_KEYS = {
+    "env",
+    "env_key",
+    "environment",
+    "secret",
+    "secret_name",
+    "credential",
+    "token",
+    "password",
+    "api_key",
+}
 
 
 def risk(
@@ -74,21 +90,49 @@ def infer_capabilities(tool_name: str, description: str, schema: dict[str, Any])
 
     if (
         any(token in text for token in ("read_file", "read file", "filesystem", "path"))
-        or "path" in schema_keys
+        or schema_keys & FILESYSTEM_READ_SCHEMA_KEYS
     ):
         capabilities.add("filesystem_read")
-    if any(token in text for token in ("write_file", "write file", "delete", "remove")):
+    if any(
+        token in text
+        for token in ("write_file", "write file", "write", "delete", "remove", "overwrite")
+    ):
         capabilities.add("filesystem_write")
-    if any(token in text for token in ("shell", "command", "exec")) or schema_keys & {
-        "command",
-        "cmd",
-    }:
+    if (
+        any(token in text for token in ("shell", "command", "exec"))
+        or schema_keys & SHELL_SCHEMA_KEYS
+    ):
         capabilities.add("shell_execution")
     if (
         any(token in text for token in ("http", "url", "post", "webhook", "upload"))
-        or "url" in schema_keys
+        or schema_keys & NETWORK_SCHEMA_KEYS
     ):
-        capabilities.add("network")
+        capabilities.add("network_egress")
+    if (
+        any(token in text for token in ("database", "sql", "query", "table", "collection"))
+        or schema_keys & DATABASE_SCHEMA_KEYS
+    ):
+        capabilities.add("database_access")
+    if (
+        any(token in text for token in ("browser", "click", "navigate", "page", "screenshot"))
+        or schema_keys & BROWSER_SCHEMA_KEYS
+    ):
+        capabilities.add("browser_automation")
+    if (
+        any(
+            token in text
+            for token in (
+                "environment variable",
+                "credential",
+                "secret",
+                "token",
+                "api key",
+                "password",
+            )
+        )
+        or schema_keys & CREDENTIAL_SCHEMA_KEYS
+    ):
+        capabilities.add("credential_access")
 
     return sorted(capabilities)
 

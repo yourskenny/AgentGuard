@@ -27,6 +27,7 @@ M0 骨架已完成:
 - 2026-07-08: M1.1 已完成。新增 6 个 MCP config fixture, 覆盖 `mcpServers`、`servers` 字典、`servers` 数组、YAML、缺失 `command`、非法 `args`、非法 `env`; scanner 现在会对非法 server 字段输出清晰错误; CLI 非法配置路径返回非 0 且不暴露 traceback。
 - 2026-07-08: M1.2 已完成。新增 server 级风险 fixture, 覆盖敏感 env、危险启动命令、未固定 `npx/uvx` 包来源、高权限目录参数; 每类风险至少 2 条测试 case; Markdown scan 报告可按 server 展示风险 evidence。
 - 2026-07-08: M1.3 已完成。scan Markdown 报告新增 Risk Distribution; JSON 报告保留结构化 risks; SARIF 报告测试覆盖 rules/results; CLI `scan --output` 写文件路径已验证。
+- 2026-07-08: M2.1 已完成。`infer_capabilities` 现在覆盖 filesystem read/write、shell execution、network egress、database access、browser automation、credential/env access; 每类至少 2 条测试, 并验证一个工具可同时拥有多个 capability。
 
 ## 里程碑总览
 
@@ -34,7 +35,7 @@ M0 骨架已完成:
 |---|---|---|---|
 | M0 | 可运行骨架 | CLI/API/模型/测试/基础 docs | 已完成 |
 | M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 已完成 |
-| M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 待做 |
+| M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 进行中 |
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 待做 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 待做 |
 | M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
@@ -96,13 +97,13 @@ M0 骨架已完成:
 
 ### M2.1 工具能力分类
 
-- [ ] 分类 filesystem read。
-- [ ] 分类 filesystem write。
-- [ ] 分类 shell execution。
-- [ ] 分类 network egress。
-- [ ] 分类 database access。
-- [ ] 分类 browser automation。
-- [ ] 分类 credential/env access。
+- [x] 分类 filesystem read。
+- [x] 分类 filesystem write。
+- [x] 分类 shell execution。
+- [x] 分类 network egress。
+- [x] 分类 database access。
+- [x] 分类 browser automation。
+- [x] 分类 credential/env access。
 
 验收标准:
 
