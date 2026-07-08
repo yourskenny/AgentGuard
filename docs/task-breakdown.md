@@ -52,6 +52,10 @@ M0 骨架已完成:
 - 2026-07-08: 最小端到端 demo 脚本已完成。新增 `scripts/demo_e2e.py`, 一次性覆盖 scan、真实 stdio MCP adapter gateway allow、路径越界 deny、trace 读取和 85-case eval, 输出写入 `runs/demo/`; README 和 roadmap 已链接 GitHub #2。
 - 2026-07-08: 发布说明和示例录屏脚本已完成。新增 `docs/release-notes.md` 和 `docs/demo-recording-script.md`, 覆盖当前里程碑、验证证据、安全边界、2-3 分钟录屏流程和禁止夸大的表述; README 和 roadmap 已链接 GitHub #3。
 - 2026-07-08: MCP adapter 生命周期硬化已完成。`MCPToolAdapter` 新增显式 close 状态、`health_check()` 初始化/list-tools 检查、启动超时稳定映射、结果大小上限; FastAPI gateway shutdown 会调用 adapter `close()`; 本地验证为 107 passed、1 个上游 TestClient deprecation warning, ruff 和 `scripts/demo_e2e.py` 通过。
+- 2026-07-08: README quick start 已根据最新 CI/demo 结果回补。首屏命令加入 `scripts/demo_e2e.py`, Safety Boundaries 更新为已具备 close/shutdown cleanup、health check、timeout mapping 和 result-size limits, 但仍明确不是 production pooled runtime。
+- 2026-07-08: 已完成 GitHub issues 已关闭。#1、#2、#3、#4 均为 closed, 已完成事项无遗留 open issue。
+- 2026-07-08: demo 输出稳定样例已回补到报告文档。新增 `docs/report-samples/demo-artifacts.md`, 摘录 scan risk distribution、gateway allow/deny、trace event sequence 和 85-case eval metrics; README Report Samples 已加入入口。
+- 2026-07-08: 后续策略规则扩展 issue 已创建。新增 GitHub #5, 聚焦 credential exfiltration、browser/database policy、network egress edge cases 和高风险 capability 组合的后续规则扩展; roadmap 已加入 P4。
 
 ## 里程碑总览
 
@@ -563,9 +567,9 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 建议下一轮从 MCP adapter 连接池与进程生命周期硬化开始, 按以下顺序做:
 
 1. [x] MCP adapter 连接池与进程生命周期硬化, 对应 GitHub #4。
-2. 根据 CI 和 demo 结果回补 README quick start。
-3. 关闭或更新已完成 GitHub issues。
-4. 从 demo 输出中挑选稳定样例回补报告文档。
-5. 为后续策略规则扩展增加 issue。
+2. [x] 根据 CI 和 demo 结果回补 README quick start。
+3. [x] 关闭或更新已完成 GitHub issues。
+4. [x] 从 demo 输出中挑选稳定样例回补报告文档。
+5. [x] 为后续策略规则扩展增加 issue, 对应 GitHub #5。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

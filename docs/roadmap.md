@@ -20,6 +20,7 @@ Completed baseline:
 - [x] [#2 Build minimal end-to-end demo script](https://github.com/yourskenny/AgentGuard/issues/2)
 - [x] [#3 Prepare release notes and demo recording script](https://github.com/yourskenny/AgentGuard/issues/3)
 - [x] [#4 Harden MCP adapter session and process lifecycle](https://github.com/yourskenny/AgentGuard/issues/4)
+- [ ] [#5 Expand policy rule coverage beyond demo baseline](https://github.com/yourskenny/AgentGuard/issues/5)
 
 ## Priority Order
 
@@ -79,6 +80,21 @@ Acceptance:
 - Gateway shutdown cleans up owned resources.
 - Timeout, result-size, and error paths have tests.
 - Existing `ToolAdapter.execute()` gateway port stays stable.
+
+### P4: Policy Rule Coverage Expansion
+
+GitHub issue: [#5 Expand policy rule coverage beyond demo baseline](https://github.com/yourskenny/AgentGuard/issues/5)
+
+Status: open.
+
+Why next: after the gateway/demo baseline is stable, the next project value comes from broadening policy coverage without weakening evidence quality.
+
+Acceptance:
+
+- Each new rule has positive and negative fixtures.
+- Policy decisions include structured evidence and recommendations.
+- Evaluation category metrics are updated.
+- `pytest`, `ruff check .`, `scripts/demo_e2e.py`, and CI pass.
 
 ## Execution Rule
 

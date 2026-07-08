@@ -18,6 +18,7 @@ python -m venv .venv
 .\.venv\Scripts\agentguard --help
 .\.venv\Scripts\agentguard scan --config examples/mcp.sample.json
 .\.venv\Scripts\agentguard eval --cases tests/fixtures/security_cases.jsonl --policy examples/agentguard.yml
+.\.venv\Scripts\python scripts\demo_e2e.py
 ```
 
 ## CLI
@@ -73,7 +74,7 @@ Excerpt:
 ## Safety Boundaries
 
 - AgentGuard is a policy gateway and evaluator, not a full OS sandbox, EDR, or container isolation layer.
-- The default adapter is a mock adapter for local demonstration; the stdio MCP adapter is a local spike and still needs session pooling and process-lifecycle hardening before production use.
+- The default adapter is a mock adapter for local demonstration; the stdio MCP adapter now has explicit close/shutdown cleanup, health checks, timeout mapping, and result-size limits, but remains a local spike rather than a production pooled runtime.
 - Trace data is redacted by policy and stores summaries, but the SQLite trace DB should still be treated as sensitive operational data.
 - Replay metrics measure configured policy behavior; they are not a substitute for a human security review of new tools or policies.
 
@@ -115,6 +116,7 @@ The demo writes scan, gateway, trace, and evaluation artifacts under `runs/demo/
 
 ## Report Samples
 
+- [End-to-End Demo Artifacts](docs/report-samples/demo-artifacts.md)
 - [Evaluation Markdown](docs/report-samples/evaluation-sample.md)
 - [Evaluation JSON](docs/report-samples/evaluation-sample.json)
 - [Evaluation SARIF](docs/report-samples/evaluation-sample.sarif.json)
