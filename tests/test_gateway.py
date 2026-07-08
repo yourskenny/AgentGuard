@@ -91,7 +91,7 @@ def test_call_tool_returns_409_error_body_for_confirm_request(tmp_path):
     assert payload["error"]["details"]["decision"] == "confirm"
 
 
-def test_call_tool_records_policy_and_result_trace_for_allowed_request(tmp_path):
+def test_call_tool_records_policy_call_and_result_trace_for_allowed_request(tmp_path):
     client = TestClient(create_app(trace_db=tmp_path / "trace.sqlite3"))
 
     response = client.post(
@@ -105,10 +105,40 @@ def test_call_tool_records_policy_and_result_trace_for_allowed_request(tmp_path)
     )
     trace = client.get("/v1/runs/allowed-call-run/trace").json()
     event_types = [event["eventType"] for event in trace["steps"]]
+    tool_call_payload = trace["steps"][1]["payload"]
 
     assert response.status_code == 200
     assert response.json()["decision"]["action"] == "allow"
-    assert event_types == ["policy_decision", "tool_result"]
+    assert event_types == ["policy_decision", "tool_call", "tool_result"]
+    assert tool_call_payload["toolName"] == "read_file"
+    assert tool_call_payload["argumentsSummary"] == {"path": "README.md"}
+
+
+def test_call_tool_trace_redacts_arguments_and_result_summary(tmp_path):
+    client = TestClient(create_app(trace_db=tmp_path / "trace.sqlite3"))
+
+    response = client.post(
+        "/v1/tool-calls",
+        json={
+            "runId": "redacted-call-run",
+            "stepId": "step-1",
+            "toolName": "read_file",
+            "arguments": {
+                "path": "README.md",
+                "headers": {"api_key": "sk-call-secret"},
+            },
+        },
+    )
+    trace = client.get("/v1/runs/redacted-call-run/trace").json()
+    rendered = json.dumps(trace)
+    tool_call_payload = trace["steps"][1]["payload"]
+    result_payload = trace["steps"][2]["payload"]
+
+    assert response.status_code == 200
+    assert response.json()["decision"]["action"] == "redact"
+    assert "sk-call-secret" not in rendered
+    assert tool_call_payload["argumentsSummary"]["headers"]["api_key"] == "***REDACTED***"
+    assert result_payload["resultSummary"]["arguments"]["headers"]["api_key"] == "***REDACTED***"
 
 
 def test_trace_write_and_read_roundtrip(tmp_path):
@@ -195,11 +225,11 @@ def test_adapter_error_is_recorded_as_trace_error_event(tmp_path):
     )
     trace = client.get("/v1/runs/adapter-error-run/trace").json()
     event_types = [event["eventType"] for event in trace["steps"]]
-    error_payload = trace["steps"][1]["payload"]
+    error_payload = trace["steps"][2]["payload"]
 
     assert response.status_code == 502
     assert response.json()["error"]["code"] == "adapter_failed"
-    assert event_types == ["policy_decision", "tool_error"]
+    assert event_types == ["policy_decision", "tool_call", "tool_error"]
     assert error_payload["toolName"] == "read_file"
     assert error_payload["error"]["code"] == "adapter_failed"
     assert error_payload["error"]["message"] == "adapter exploded"

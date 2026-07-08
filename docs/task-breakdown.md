@@ -36,6 +36,7 @@ M0 骨架已完成:
 - 2026-07-08: M3.4 已完成。脱敏策略新增递归参数脱敏、tool result 摘要脱敏、authorize trace 不落原始 secret、evaluator redaction coverage 测试; `PolicyDecision` 现在输出 `redactionCount`, 嵌套 token/secret/password/api_key 均会计数并替换为 `***REDACTED***`。
 - 2026-07-08: M4.1 已完成。FastAPI TestClient 契约测试覆盖 `/healthz`、`/v1/tool-calls:authorize`、`/v1/tool-calls`、`/v1/traces`、`/v1/runs/{run_id}/trace`; deny 返回 403, confirm 返回 409, authorize 只写 policy_decision 不写 tool_result。
 - 2026-07-08: M4.2 已完成。新增 `ToolAdapter` 协议、`MockToolAdapter` 和 `ToolAdapterError`; gateway 支持 adapter 注入, deny/confirm 不执行 adapter, allow 返回结构化 mock result, adapter 错误返回 502 并记录 `tool_error` trace event。
+- 2026-07-08: M4.3 已完成。完整 tool call trace 现在按顺序记录 `policy_decision`、`tool_call`、`tool_result`; 阻断请求只记录 policy decision; adapter 错误记录 `tool_error`; call 链路中的参数摘要和结果摘要均验证不落原始 secret。
 
 ## 里程碑总览
 
@@ -45,7 +46,7 @@ M0 骨架已完成:
 | M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 已完成 |
 | M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 已完成 |
 | M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 已完成 |
-| M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 进行中 |
+| M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 已完成 |
 | M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
 | M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
 
@@ -239,12 +240,12 @@ M0 骨架已完成:
 
 ### M4.3 Trace Recorder 完善
 
-- [ ] 记录 policy_decision。
-- [ ] 记录 tool_call。
-- [ ] 记录 tool_result。
-- [ ] 记录 error。
-- [ ] 支持按 run_id 读取事件。
-- [ ] 支持参数摘要和结果摘要。
+- [x] 记录 policy_decision。
+- [x] 记录 tool_call。
+- [x] 记录 tool_result。
+- [x] 记录 error。
+- [x] 支持按 run_id 读取事件。
+- [x] 支持参数摘要和结果摘要。
 
 验收标准:
 
@@ -401,12 +402,12 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 ## 下一步执行切片
 
-建议下一轮从 M4.3 开始, 按以下顺序做:
+建议下一轮从 M5.1 开始, 按以下顺序做:
 
-1. M4.3: Trace Recorder 完善。
-2. M5.1: 扩展 JSONL case。
-3. M5.2: 指标计算完善。
-4. M5.3: 回归报告样例。
-5. M6.1: README 使用说明。
+1. M5.1: 扩展 JSONL case。
+2. M5.2: 指标计算完善。
+3. M5.3: 回归报告样例。
+4. M6.1: README 使用说明。
+5. M6.2: 报告样例和演示脚本。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。

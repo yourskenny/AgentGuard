@@ -68,6 +68,21 @@ def create_app(
             )
 
         adapter_request = request.model_copy(update={"arguments": decision.redacted_arguments})
+        if request.run_id:
+            recorder.record_event(
+                TraceEvent(
+                    run_id=request.run_id,
+                    step_id=request.step_id,
+                    event_type="tool_call",
+                    payload={
+                        "requestId": decision.request_id,
+                        "serverName": request.server_name,
+                        "toolName": request.tool_name,
+                        "argumentsSummary": decision.redacted_arguments,
+                        "redactionCount": decision.redaction_count,
+                    },
+                )
+            )
         try:
             result = adapter.execute(adapter_request)
         except ToolAdapterError as exc:
