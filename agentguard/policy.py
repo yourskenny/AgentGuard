@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import fnmatch
+import os
 import re
 import time
-from pathlib import Path
+from collections.abc import Iterable
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 from agentguard.config import AgentGuardConfig, default_config
 from agentguard.metadata import DANGEROUS_COMMAND_PATTERNS, risk
 from agentguard.models import Decision, PolicyDecision, RiskRecord, Severity, ToolCallRequest
 
-SENSITIVE_FILE_NAMES = {".env", "id_rsa", "id_ed25519", "cookies.sqlite"}
+SENSITIVE_FILE_NAMES = {".env", "id_rsa", "id_ed25519", "cookies", "cookies.sqlite"}
+PATH_ARGUMENT_NAMES = {"file", "file_path", "filepath", "filename"}
 NETWORK_TOOLS = {"http_post", "post_url", "webhook", "upload", "send_request"}
 WRITE_TOOLS = {"write_file", "delete_file", "remove_file", "replace_file"}
 
@@ -60,13 +63,8 @@ class PolicyEngine:
 
     def _filesystem_risks(self, request: ToolCallRequest) -> list[RiskRecord]:
         risks: list[RiskRecord] = []
-        for key, value in request.arguments.items():
-            if "path" not in key.lower() and key.lower() not in {"file", "filename"}:
-                continue
-            if not isinstance(value, str):
-                continue
-            path = Path(value)
-            if self._is_denied_file(path):
+        for key, value in self._iter_path_arguments(request.arguments):
+            if self._is_denied_file(value):
                 risks.append(
                     risk(
                         "sensitive_file_access",
@@ -75,13 +73,15 @@ class PolicyEngine:
                         "Block sensitive file access or require explicit one-time approval.",
                     )
                 )
-            if not self._is_inside_allowed_root(path):
+            if not self._is_inside_allowed_root(value):
                 risks.append(
                     risk(
                         "broad_filesystem_scope",
                         Severity.HIGH,
-                        f"Argument {key!r} resolves outside allowed roots: {value}",
-                        "Restrict file access to configured workspace roots.",
+                        f"Argument {key!r} resolves outside allowed roots after normalization: "
+                        f"{value}",
+                        "Restrict file access to configured workspace roots and treat parent "
+                        "traversal or symlink-resolved escapes as denied.",
                     )
                 )
         return risks
@@ -136,31 +136,80 @@ class PolicyEngine:
                 redacted[key] = value
         return redacted
 
-    def _is_denied_file(self, path: Path) -> bool:
-        normalized = path.name
-        if normalized in SENSITIVE_FILE_NAMES:
-            return True
-        return any(
-            fnmatch.fnmatch(normalized, pattern) for pattern in self.config.filesystem.deny_patterns
+    def _iter_path_arguments(
+        self, value: dict[str, Any] | list[Any], prefix: str = ""
+    ) -> Iterable[tuple[str, str]]:
+        if isinstance(value, dict):
+            for raw_key, child in value.items():
+                key = str(raw_key)
+                argument_name = f"{prefix}.{key}" if prefix else key
+                if isinstance(child, str) and self._is_path_argument_key(key):
+                    yield argument_name, child
+                elif isinstance(child, dict | list):
+                    yield from self._iter_path_arguments(child, argument_name)
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                argument_name = f"{prefix}[{index}]"
+                if isinstance(child, dict | list):
+                    yield from self._iter_path_arguments(child, argument_name)
+
+    @staticmethod
+    def _is_path_argument_key(key: str) -> bool:
+        normalized = key.lower()
+        return (
+            "path" in normalized
+            or normalized in PATH_ARGUMENT_NAMES
+            or normalized.endswith("_file")
+            or normalized.endswith("-file")
         )
 
-    def _is_inside_allowed_root(self, path: Path) -> bool:
+    def _is_denied_file(self, path_value: str) -> bool:
+        parts = [
+            part.lower()
+            for part in re.split(r"[\\/]+", path_value)
+            if part and part not in {".", ".."}
+        ]
+        patterns = [pattern.lower() for pattern in self.config.filesystem.deny_patterns]
+        if any(part in SENSITIVE_FILE_NAMES for part in parts):
+            return True
+        return any(fnmatch.fnmatch(part, pattern) for part in parts for pattern in patterns)
+
+    def _is_inside_allowed_root(self, path_value: str) -> bool:
+        if self._is_unsupported_windows_path(path_value):
+            return False
+        path_text = self._normalize_path_text(path_value)
         try:
+            path = Path(path_text)
             resolved = (
-                (self.base_dir / path).resolve() if not path.is_absolute() else path.resolve()
+                (self.base_dir / path).resolve(strict=False)
+                if not path.is_absolute()
+                else path.resolve(strict=False)
             )
         except OSError:
             return False
         for root in self.config.filesystem.allowed_roots:
-            root_path = Path(root)
+            root_path = Path(self._normalize_path_text(root))
             resolved_root = (
-                (self.base_dir / root_path).resolve()
+                (self.base_dir / root_path).resolve(strict=False)
                 if not root_path.is_absolute()
-                else root_path.resolve()
+                else root_path.resolve(strict=False)
             )
             if resolved == resolved_root or resolved.is_relative_to(resolved_root):
                 return True
         return False
+
+    @staticmethod
+    def _normalize_path_text(path_value: str) -> str:
+        if os.name == "nt":
+            return path_value
+        return path_value.replace("\\", "/")
+
+    @staticmethod
+    def _is_unsupported_windows_path(path_value: str) -> bool:
+        windows_path = PureWindowsPath(path_value)
+        if not windows_path.drive:
+            return False
+        return os.name != "nt" or not Path(path_value).is_absolute()
 
     @staticmethod
     def _reason(action: Decision, risk_tags: list[str], elapsed_ms: float) -> str:

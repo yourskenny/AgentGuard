@@ -17,6 +17,7 @@ class FilesystemPolicy(BaseModel):
             "id_rsa",
             "id_ed25519",
             "*.pem",
+            "cookies*",
             "cookies.sqlite",
         ]
     )

@@ -30,6 +30,7 @@ M0 骨架已完成:
 - 2026-07-08: M2.1 已完成。`infer_capabilities` 现在覆盖 filesystem read/write、shell execution、network egress、database access、browser automation、credential/env access; 每类至少 2 条测试, 并验证一个工具可同时拥有多个 capability。
 - 2026-07-08: M2.2 已完成。新增 20 条 tool poisoning 描述注入回归样例, 覆盖忽略/覆盖指令、读取凭据、外发敏感内容、隐藏/系统/developer prompt、绕过策略; `tool_description_injection` 命中项保留匹配片段 evidence 和 recommendation, 并验证安全描述不误报。
 - 2026-07-08: M2.3 已完成。新增 16 条 schema 风险回归 case 和分数/负例测试, 覆盖 `command/cmd`、`path/file/filename`、`url/endpoint/webhook`、无类型 object、宽 `additionalProperties`、缺失 `required`; schema ambiguity 风险输出中高等级、结构化 evidence 和可解释分数。
+- 2026-07-08: M3.1 已完成。文件系统策略新增规范化路径测试和 20 个 deny case, 覆盖 `.env`、SSH key、pem、cookies、`../`、Windows/POSIX 绝对路径、反斜杠逃逸、嵌套 path 参数; policy evidence/recommendation 明确 parent traversal 与 symlink-resolved escape 风险。
 
 ## 里程碑总览
 
@@ -38,7 +39,7 @@ M0 骨架已完成:
 | M0 | 可运行骨架 | CLI/API/模型/测试/基础 docs | 已完成 |
 | M1 | MCP 配置扫描增强 | 多格式扫描、风险证据、扫描报告 | 已完成 |
 | M2 | Tool Metadata Analyzer 增强 | 工具能力分类、描述注入检测、schema 风险 | 已完成 |
-| M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 待做 |
+| M3 | Policy Engine 闭环 | allow/deny/confirm/redact 策略与测试 | 进行中 |
 | M4 | Runtime Gateway 闭环 | HTTP 授权、mock 转发、trace 写入 | 待做 |
 | M5 | Replay Evaluation 闭环 | 60+ case、指标、失败样例 | 待做 |
 | M6 | 报告与展示材料 | README、报告样例、简历/面试材料 | 待做 |
@@ -147,11 +148,11 @@ M0 骨架已完成:
 
 ### M3.1 文件系统策略
 
-- [ ] 规范化相对路径和绝对路径。
-- [ ] 阻断 allowed roots 之外的路径。
-- [ ] 阻断敏感文件名和 glob pattern。
-- [ ] 支持 Windows 路径和 POSIX 路径。
-- [ ] 对软链接逃逸风险给出策略说明。
+- [x] 规范化相对路径和绝对路径。
+- [x] 阻断 allowed roots 之外的路径。
+- [x] 阻断敏感文件名和 glob pattern。
+- [x] 支持 Windows 路径和 POSIX 路径。
+- [x] 对软链接逃逸风险给出策略说明。
 
 验收标准:
 
@@ -397,10 +398,10 @@ M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6
 
 建议下一轮从 M3 开始, 按以下顺序做:
 
-1. M3.1: 加强文件系统策略。
-2. M3.2: 加强 Shell 策略。
-3. M3.3: 加强网络外发策略。
-4. M3.4: 增加脱敏策略。
-5. M4.1: 落地 Runtime Gateway API 契约。
+1. M3.2: 加强 Shell 策略。
+2. M3.3: 加强网络外发策略。
+3. M3.4: 增加脱敏策略。
+4. M4.1: 落地 Runtime Gateway API 契约。
+5. M4.2: Tool Adapter 抽象。
 
 这 5 个切片完成后, 项目就能从“扫描结果可信”进入“运行时拦截闭环可演示”的状态。
